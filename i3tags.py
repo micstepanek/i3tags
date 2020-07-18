@@ -76,7 +76,7 @@ class TkInter(tkinter.Tk):
 
     def quit_entry(self, _):
         gui.clear()
-        gui.update()
+        #gui.update()
         gui.withdraw()
         i3.main()
 
@@ -93,22 +93,26 @@ class TkInter(tkinter.Tk):
     def _prepare_tags(self, tag_tree):
         for tag in tag_tree.tags():
             if tag.focused:
-                self.add_label(tag.name, 'lightgreen')
-            else:
-                self.add_label(tag.name)
+                self.add_label(f'    {tag.name}  ---  ', 'lightgreen')
+
             windows = tag.nodes
             for window in windows:
-                if window.focused:
-                    self.add_label(f'  {window.window_title}', 'lightgreen')
-                elif window.urgent:
-                    self.add_label(f'  {window.window_title}', 'yellow')
-                else:
-                    self.add_label(f'  {window.window_title}')
+                self.label_i3_container(tag, window)
 
-    def add_label(self, text, background_color=None):
-        label = tkinter.Label(self.frame,
+    def label_i3_container(self, tag, window):
+        color = None
+        if window.focused:
+            color = 'lightgreen'
+        elif window.urgent:
+            color = 'yellow'
+        self.add_label(f'    {tag.name}  ---  {window.window_class}', color)
+        self.add_label(window.name, color)
+
+    def add_label(self, text, background_color=None, left_padding=None):
+        label = tkinter.Label(self.frame, #parent
                               anchor = 'w', #left
                               text = text,
+                              padx = left_padding,
                               bg = background_color)
         label.pack(expand=True, fill='x')
 
