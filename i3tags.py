@@ -76,7 +76,7 @@ class TkInter(tkinter.Tk):
 
     def quit_entry(self, _):
         gui.clear()
-        gui.update()
+        #gui.update()
         gui.withdraw()
         i3.main()
 
