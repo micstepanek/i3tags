@@ -158,7 +158,9 @@ class Con():
     self.remove_focus = remove_focus
     self.update_tag = update_tag
 
+
 gui = TkInter()
 i3 = ConnectionToI3WindowManager()
-i3.main()
-gui.mainloop()
+if __name__ == '__main__':
+    i3.main()
+    gui.mainloop()
