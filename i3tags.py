@@ -59,7 +59,7 @@ class TkInter(tkinter.Tk):
         self.update()
 
     def loop_rename_entry(self):
-        self.entry = tkinter.Entry(gui.frame)
+        self.entry = tkinter.Entry(self.frame)
         self.entry.focus()
         self.entry.bind('<Escape>', self.quit_entry)
         self.entry.bind('<Return>', self.process_rename_entry)
@@ -75,9 +75,8 @@ class TkInter(tkinter.Tk):
         self.quit_entry(_)
 
     def quit_entry(self, _):
-        gui.clear()
-        #gui.update()
-        gui.withdraw()
+        self.clear()
+        self.withdraw()
         i3.main()
 
     def _set_time(self):
@@ -122,7 +121,7 @@ class TkInter(tkinter.Tk):
         self.frame.pack()
 
     def show_mode(self, mode_event):
-        gui.clear()
+        self.clear()
         mode_hints = mode_event.change.split('|')
         for hint in mode_hints:
             self.add_label(hint)
