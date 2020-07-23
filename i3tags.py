@@ -9,7 +9,7 @@ class ConnectionToI3WindowManager(i3ipc.Connection):
     def __init__(self):
         super().__init__()
         self.on(i3ipc.Event.MODE, self.handle_mode)
-        self.tag_tree = self.get_tree()
+        self._tag_tree = self.get_tree()
 
     @property
     def tags(self):
@@ -24,7 +24,7 @@ class ConnectionToI3WindowManager(i3ipc.Connection):
         mode = mode_event.change
         if mode == 'henkan':
             self.update_tags()
-            gui.activate(self.tag_tree)
+            gui.activate(self._tag_tree)
         elif mode.endswith('entry'):
             self.main_quit()
             self.command('mode default')
@@ -40,7 +40,7 @@ class ConnectionToI3WindowManager(i3ipc.Connection):
 
 
     def update_tags(self):
-        self.tag_tree = self.get_tree()
+        self._tag_tree = self.get_tree()
 
 
 class TkInter(tkinter.Tk):
@@ -70,7 +70,7 @@ class TkInter(tkinter.Tk):
                         'set_window',
                         '--name',
                         self.entry.get(),
-                        str(i3.tag_tree.find_focused().window)
+                        str(i3._tag_tree.find_focused().window)
                         ])
         self.quit_entry(_)
 
