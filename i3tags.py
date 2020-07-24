@@ -93,14 +93,14 @@ class TkInter(tkinter.Tk):
         for tag in tag_tree.tags():
 
             windows = tag.nodes
-            if windows:
-                for window in windows:
-                    self.label_i3_container(tag, window)
-            else:
-                if tag.focused:
+            if not windows:
+                try:
+                    windows = tag.floating_nodes[0].nodes
+                except IndexError:
                     self.add_label(f'    {tag.name}  ---  ', 'lightgreen')
-                else:
-                    self.add_label(f'    {tag.name}  ---  ')
+
+            for window in windows:
+                self.label_i3_container(tag, window)
 
     def label_i3_container(self, tag, window):
         color = None
