@@ -29,14 +29,27 @@ class ConnectionToI3WindowManager(i3ipc.Connection):
             self.main_quit()
             self.command('mode default')
             if mode == 'entry':
-                gui.loop_rename_entry()
+                gui.loop_entry(self.process_rename_entry)
             elif mode == 'tag entry':
-                raise NotImplementedError
+                gui.loop_entry(self.process_tag_entry)
         elif mode == 'default':
             gui.clear()
             gui.withdraw()
         else:
             gui.show_mode(mode_event)
+
+    def process_tag_entry(self, _):
+        raise NotImplementedError
+        gui.quit_entry(_)
+
+    def process_rename_entry(self, _):
+        subprocess.run(['xdotool',
+                        'set_window',
+                        '--name',
+                        gui.entry.get(),
+                        str(self._tag_tree.find_focused().window)
+                        ])
+        gui.quit_entry(_)
 
 
     def update_tags(self):
@@ -70,21 +83,13 @@ class TkInter(tkinter.Tk):
         self.deiconify()
         self.update()
 
-    def loop_rename_entry(self):
+    def loop_entry(self, on_key_return):
         self.entry = tkinter.Entry(self.frame)
         self.entry.focus()
         self.entry.bind('<Escape>', self.quit_entry)
-        self.entry.bind('<Return>', self.process_rename_entry)
+        self.entry.bind('<Return>', on_key_return)
         self.entry.pack()
 
-    def process_rename_entry(self, _):
-        subprocess.run(['xdotool',
-                        'set_window',
-                        '--name',
-                        self.entry.get(),
-                        str(i3._tag_tree.find_focused().window)
-                        ])
-        self.quit_entry(_)
 
     def quit_entry(self, _):
         self.clear()
