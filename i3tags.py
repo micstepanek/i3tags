@@ -93,6 +93,7 @@ class TkInter(tkinter.Tk):
 
     def quit_entry(self, _):
         self.clear()
+        self.update()
         self.withdraw()
         i3.main()
 
