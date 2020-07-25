@@ -47,15 +47,20 @@ class TkInter(tkinter.Tk):
     _FOCUS_COLOR = '#cfc'
     _URGENT_COLOR = 'yellow'
     _COLOR_0 = 'white'
-    _COLOR_1 = '#f9f9f9'
+    _COLOR_1 = '#fafafa'
     _TAG_PADDING = 40
-    _next_color_0 = True
 
     def __init__(self):
         super().__init__()
         self.attributes('-type', 'dialog')
         self.frame = tkinter.Frame(self)
         self.frame.pack()
+        self.color_generator = self.color_generator()
+
+    def color_generator(self):
+        while True:
+            yield self._COLOR_0
+            yield self._COLOR_1
 
     def activate(self, tag_tree):
         self._prepare_tags(tag_tree)
@@ -107,22 +112,20 @@ class TkInter(tkinter.Tk):
                                    self._FOCUS_COLOR,
                                    self._TAG_PADDING)
             for window in windows:
-                self.label_i3_container(tag, window)
+                self.label_i3_window(tag, window)
 
-    def label_i3_container(self, tag, window):
+
+    def label_i3_window(self, tag, window):
         if window.focused:
             color = self._FOCUS_COLOR
         elif window.urgent:
             color = self._URGENT_COLOR
-        elif self._next_color_0:
-            color = self._COLOR_0
         else:
-            color = self._COLOR_1
+            color = next(self.color_generator)
         self.add_label(f'{tag.name}           {window.window_class}',
                        color,
                        self._TAG_PADDING)
         self.add_label(window.name, color)
-        self._next_color_0 = not self._next_color_0
 
     def add_label(self, text, background_color=None, left_padding=None):
         label = tkinter.Label(self.frame, #parent
