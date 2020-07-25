@@ -44,6 +44,13 @@ class ConnectionToI3WindowManager(i3ipc.Connection):
 
 
 class TkInter(tkinter.Tk):
+    _FOCUS_COLOR = '#cfc'
+    _URGENT_COLOR = 'yellow'
+    _COLOR_0 = 'white'
+    _COLOR_1 = '#f9f9f9'
+    _TAG_PADDING = 40
+    _next_color_0 = True
+
     def __init__(self):
         super().__init__()
         self.attributes('-type', 'dialog')
@@ -91,25 +98,31 @@ class TkInter(tkinter.Tk):
 
     def _prepare_tags(self, tag_tree):
         for tag in tag_tree.tags():
-
             windows = tag.nodes
             if not windows:
                 try:
                     windows = tag.floating_nodes[0].nodes
                 except IndexError:
-                    self.add_label(f'    {tag.name}  ---  ', 'lightgreen')
-
+                    self.add_label(tag.name,
+                                   self._FOCUS_COLOR,
+                                   self._TAG_PADDING)
             for window in windows:
                 self.label_i3_container(tag, window)
 
     def label_i3_container(self, tag, window):
-        color = None
         if window.focused:
-            color = 'lightgreen'
+            color = self._FOCUS_COLOR
         elif window.urgent:
-            color = 'yellow'
-        self.add_label(f'    {tag.name}  ---  {window.window_class}', color)
+            color = self._URGENT_COLOR
+        elif self._next_color_0:
+            color = self._COLOR_0
+        else:
+            color = self._COLOR_1
+        self.add_label(f'{tag.name}           {window.window_class}',
+                       color,
+                       self._TAG_PADDING)
         self.add_label(window.name, color)
+        self._next_color_0 = not self._next_color_0
 
     def add_label(self, text, background_color=None, left_padding=None):
         label = tkinter.Label(self.frame, #parent
