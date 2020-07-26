@@ -228,12 +228,12 @@ class I3Wrapper(i3ipc.Connection):
 
     def _inspect_tag_tree(self):
         current_workspace = self.workspace_tree.find_focused().workspace()
-        self.tags = [
+        tags = [
                 current_workspace if current_workspace.name == tag.name else
                 tag.update_tag(self.workspace_tree)
                 for tag in self.tags
-                if tag.nodes
                     ]
+        self.tags = [tag for tag in tags if tag.nodes]
 
     def _inspect_workspaces(self):
         tag_names = [tag.name for tag in self.tags]
