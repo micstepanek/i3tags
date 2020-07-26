@@ -4,56 +4,7 @@ import i3ipc
 import tkinter
 import time
 import subprocess
-
-class ConnectionToI3WindowManager(i3ipc.Connection):
-    def __init__(self):
-        super().__init__()
-        self.on(i3ipc.Event.MODE, self.handle_mode)
-        self._tag_tree = self.get_tree()
-
-    @property
-    def tags(self):
-        return self._tag_tree.nodes[1].nodes[1].nodes
-
-    @tags.setter
-    def tags(self, list_):
-        self._tag_tree.nodes[1].nodes[1].nodes = list_
-
-    def handle_mode(self, _, mode_event):
-        print(mode_event.change)
-        mode = mode_event.change
-        if mode == 'henkan':
-            self.update_tags()
-            gui.activate(self._tag_tree)
-        elif mode.endswith('entry'):
-            self.main_quit()
-            self.command('mode default')
-            if mode == 'entry':
-                gui.loop_entry(self.process_rename_entry)
-            elif mode == 'tag entry':
-                gui.loop_entry(self.process_tag_entry)
-        elif mode == 'default':
-            gui.clear()
-            gui.withdraw()
-        else:
-            gui.show_mode(mode_event)
-
-    def process_tag_entry(self, _):
-        raise NotImplementedError
-        gui.quit_entry(_)
-
-    def process_rename_entry(self, _):
-        subprocess.run(['xdotool',
-                        'set_window',
-                        '--name',
-                        gui.entry.get(),
-                        str(self._tag_tree.find_focused().window)
-                        ])
-        gui.quit_entry(_)
-
-
-    def update_tags(self):
-        self._tag_tree = self.get_tree()
+import copy
 
 
 class TkInter(tkinter.Tk):
@@ -70,11 +21,6 @@ class TkInter(tkinter.Tk):
         self.frame.pack()
         self.color_generator = self.color_generator()
 
-    def color_generator(self):
-        while True:
-            yield self._COLOR_0
-            yield self._COLOR_1
-
     def activate(self, tag_tree):
         self._prepare_tags(tag_tree)
         self._set_position(tag_tree)
@@ -83,19 +29,42 @@ class TkInter(tkinter.Tk):
         self.deiconify()
         self.update()
 
-    def loop_entry(self, on_key_return):
+    def color_generator(self):
+        while True:
+            yield self._COLOR_0
+            yield self._COLOR_1
+
+    def show_entry(self, on_return_key):
         self.entry = tkinter.Entry(self.frame)
         self.entry.focus()
-        self.entry.bind('<Escape>', self.quit_entry)
-        self.entry.bind('<Return>', on_key_return)
+        self.entry.bind('<Escape>', self.reset_after_entry)
+        self.entry.bind('<Return>', on_return_key)
         self.entry.pack()
 
+    def show_rename_entry(self):
+        self.show_entry(self.process_rename_entry)
 
-    def quit_entry(self, _):
+    def process_rename_entry(self, _):
+        i3.rename_focused_window(self.entry.get())
+        self.reset_after_entry()
+
+    def show_tag_entry(self):
+        self.show_entry(self.process_tag_entry)
+
+    def process_tag_entry(self, _):
+        entry = self.entry.get()
+        self.reset()
+        i3.process_tag_entry(entry)
+        i3.main()
+
+    def reset_after_entry(self, _=None):
+        self.reset()
+        i3.main()
+
+    def reset(self):
         self.clear()
         self.update()
         self.withdraw()
-        i3.main()
 
     def _set_time(self):
         self.title(time.asctime(time.localtime()))
@@ -146,9 +115,9 @@ class TkInter(tkinter.Tk):
         self.frame = tkinter.Frame(self)
         self.frame.pack()
 
-    def show_mode(self, mode_event):
+    def show_mode(self, binding_event):
         self.clear()
-        mode_hints = mode_event.change.split('|')
+        mode_hints = binding_event.binding.command.split('|')
         for hint in mode_hints:
             self.add_label(hint)
         if mode_hints[0].startswith('move '):
@@ -156,6 +125,133 @@ class TkInter(tkinter.Tk):
             #top_container.add_deprecated_workspaces()
             pass
         self.update()
+
+
+class I3Wrapper(i3ipc.Connection):
+    def __init__(self):
+        super().__init__()
+        self.on(i3ipc.Event.BINDING, self.handle_mode)
+        self._tag_tree = self.get_tree()
+        self.previous_tag = self._tag_tree.find_focused().workspace().name
+
+    @property
+    def tags(self):
+        return self._tag_tree.nodes[1].nodes[1].nodes
+
+    @tags.setter
+    def tags(self, list_):
+        self._tag_tree.nodes[1].nodes[1].nodes = list_
+
+    def handle_mode(self, _, binding_event):
+        print(binding_event.binding.command)
+        binding = binding_event.binding
+        command = binding_event.binding.command
+        key = binding_event.binding.symbol
+        if 'mode default' in command:
+            gui.reset()
+        elif command == 'mode henkan':
+            self._update_tag_tree()
+            gui.activate(self._tag_tree)
+        elif command.endswith('entry'):
+            self.main_quit()
+            self.command('mode default')
+            if command.endswith('mode entry'):
+                gui.show_rename_entry()
+            elif command.endswith('mode tag entry'):
+                gui.show_tag_entry()
+        else:
+            gui.show_mode(binding_event)
+        if command.startswith('mode tag'):
+            self.switch_tag(self.find_target(key))
+
+    def find_target(self, key):
+        current_tag = self._tag_tree.find_focused().workspace().name
+        if current_tag == key:
+            target = self.previous_tag
+        else:
+            target = key
+        self.previous_tag = current_tag
+        return target
+
+    def switch_tag(self, target):
+        for tag in self.tags:
+            if tag.name == target:
+                for window in tag.nodes:
+                    self.command(f'[con_id={window.id}]move window to workspace {target}')
+                break
+        self.command(f'workspace {target}')
+
+    def _update_tag_tree(self):
+        self.workspace_tree = self.get_tree()
+        self._inspect_tag_tree()
+        self._inspect_workspaces()
+        self._inspect_windows()
+        self.tags.sort(key=lambda x: x.name)
+
+    def process_tag_entry(self, entry):
+        current_tag = self._tag_tree.find_focused().workspace()
+        current_window = self._tag_tree.find_focused()
+        if entry == '':
+            self.command('kill') #kill focused window
+        else:
+            change_workspace_later = False
+            for char in entry:
+                if char == '.':
+                    change_workspace_later = True
+                    break
+                else:
+                    placed = self._add_to_existing_tag(char, current_window)
+                if not placed:
+                    new_tag = copy.copy(current_tag)
+                    new_tag.name = char
+                    new_tag.nodes = [current_window]
+                    self.tags.append(new_tag)
+            if change_workspace_later:
+                self.switch_tag(entry[0])
+            elif current_tag.name not in entry:
+                self.command('move window to workspace {}'.format(entry[0]))
+
+    def _add_to_existing_tag(self, char, current_window):
+        for tag in self.tags:
+            if char == tag.name:
+                tag.nodes.append(current_window)
+                return True
+        return False
+
+    def rename_focused_window(self, name):
+        subprocess.run(['xdotool',
+                        'set_window',
+                        '--name',
+                        name,
+                        str(self._tag_tree.find_focused().window)
+                        ])
+
+    def _inspect_tag_tree(self):
+        current_workspace = self.workspace_tree.find_focused().workspace()
+        self.tags = [
+                current_workspace if current_workspace.name == tag.name else
+                tag.update_tag(self.workspace_tree)
+                for tag in self.tags
+                if tag.nodes
+                    ]
+
+    def _inspect_workspaces(self):
+        tag_names = [tag.name for tag in self.tags]
+        for workspace in self.workspace_tree.workspaces():
+            if workspace.name not in tag_names:
+                self.tags.append(workspace)
+
+    def _inspect_windows(self):
+        tagged_window_IDs = [window.id for window in self._tag_tree.leaves()]
+        for window in self.workspace_tree.leaves():
+            if window.id not in tagged_window_IDs:
+                #copy window frow workspace to tag
+                workspace_id = (self.workspace_tree
+                                .find_by_id(window.id)
+                                .workspace().id)
+                self._tag_tree.find_by_id(workspace_id).nodes.append(window)
+
+
 
 class Con():
     """'monkey patch', the class used by i3ipc is i3ipc.Con, this class
@@ -185,7 +281,7 @@ class Con():
 
 
 gui = TkInter()
-i3 = ConnectionToI3WindowManager()
+i3 = I3Wrapper()
 if __name__ == '__main__':
     i3.main()
     gui.mainloop()
