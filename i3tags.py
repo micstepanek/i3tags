@@ -88,7 +88,7 @@ class TkWrapper(tkinter.Tk):
         self.show_entry(self.process_rename_entry)
 
     def process_rename_entry(self, _):
-        i3.rename_focused_window(self.entry.get())
+        i3.retitle_focused_window(self.entry.get())
         self.reset_after_entry()
 
     def show_tag_entry(self):
@@ -219,11 +219,16 @@ class I3Wrapper(i3ipc.Connection):
                 return True
         return False
 
-    def rename_focused_window(self, name):
+    def retitle_focused_window(self, title):
+        focused_window = self._tag_tree.find_focused()
+        for window in self._tag_tree.leaves():
+            if focused_window.id == window.id:
+                window.name = title
+                window.window_title = title
         subprocess.run(['xdotool',
                         'set_window',
                         '--name',
-                        name,
+                        title,
                         str(self._tag_tree.find_focused().window)
                         ])
 
