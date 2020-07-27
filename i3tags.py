@@ -250,14 +250,15 @@ class I3Wrapper(i3ipc.Connection):
 
 
 
-class Con():
-    """'monkey patch', the class used by i3ipc is i3ipc.Con, this class
-      modifies/extends i3ipc.Con. The names are styled to appear as
-      ordinary class, but the methods must be assigned to i3ipc.Con
+class I3ipcConMonkeyPatch():
+    """Monkey patch, the class used by i3ipc is i3ipc.Con, this class
+      modifies/extends i3ipc.Con. Do not want to inherit it and thus
+      change identity as it is called by multiple i3ipc classes.
+      Methods must be assigned to i3ipc.Con
       class, see the end of class"""
-    self = i3ipc.Con
-    self.tag = self.workspace
-    self.tags = self.workspaces
+    Con = i3ipc.Con
+    Con.tag = Con.workspace
+    Con.tags = Con.workspaces
 
     def remove_focus(self):
         self.focused = False
@@ -273,8 +274,8 @@ class Con():
         ]
         return self
 
-    self.remove_focus = remove_focus
-    self.update_tag = update_tag
+    Con.remove_focus = remove_focus
+    Con.update_tag = update_tag
 
 
 gui = TkWrapper()
