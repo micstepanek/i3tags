@@ -120,10 +120,6 @@ class TkInter(tkinter.Tk):
         mode_hints = binding_event.binding.command.split('|')
         for hint in mode_hints:
             self.add_label(hint)
-        if mode_hints[0].startswith('move '):
-            #top_container.add_existing_workspaces()
-            #top_container.add_deprecated_workspaces()
-            pass
         self.update()
 
 
@@ -143,26 +139,28 @@ class I3Wrapper(i3ipc.Connection):
         self._tag_tree.nodes[1].nodes[1].nodes = list_
 
     def handle_mode(self, _, binding_event):
-        print(binding_event.binding.command)
-        binding = binding_event.binding
         command = binding_event.binding.command
+        print(command)
         key = binding_event.binding.symbol
         if 'mode default' in command:
             gui.reset()
+            if command.startswith('mode tag'):
+                self.switch_tag(self.find_target(key))
         elif command == 'mode henkan':
             self._update_tag_tree()
             gui.activate(self._tag_tree)
-        elif command.endswith('entry'):
-            self.main_quit()
-            self.command('mode default')
-            if command.endswith('mode entry'):
-                gui.show_rename_entry()
-            elif command.endswith('mode tag entry'):
-                gui.show_tag_entry()
+        elif command.endswith('retitle window'):
+            self.prepare_for_entry()
+            gui.show_rename_entry()
+        elif command.endswith('retag window'):
+            self.prepare_for_entry()
+            gui.show_tag_entry()
         else:
-            gui.show_mode(binding_event)
-        if command.startswith('mode tag'):
-            self.switch_tag(self.find_target(key))
+            gui.show_mode(command)
+
+    def prepare_for_entry(self):
+        self.main_quit()
+        self.command('mode default')
 
     def find_target(self, key):
         current_tag = self._tag_tree.find_focused().workspace().name
