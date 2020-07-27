@@ -115,9 +115,9 @@ class TkInter(tkinter.Tk):
         self.frame = tkinter.Frame(self)
         self.frame.pack()
 
-    def show_mode(self, binding_event):
+    def show_mode(self, command):
         self.clear()
-        mode_hints = binding_event.binding.command.split('|')
+        mode_hints = command[5:].split('|')
         for hint in mode_hints:
             self.add_label(hint)
         self.update()
