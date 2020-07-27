@@ -2,19 +2,132 @@
 
 import i3ipc
 import tkinter
+import time
 import subprocess
-import os
+import copy
 
-'''Run as service, run once'''
 
-class ConnectionToI3WindowManager(i3ipc.Connection):
+class TkWrapper(tkinter.Tk):
+    _FOCUS_COLOR = '#cfc'
+    _URGENT_COLOR = 'yellow'
+    _COLOR_0 = 'white'
+    _COLOR_1 = '#fafafa'
+    _TAG_PADDING = 40
+
     def __init__(self):
         super().__init__()
-        self.on(i3ipc.Event.BINDING, self.handle_hotkey)
+        self.attributes('-type', 'dialog')
+        self.frame = tkinter.Frame(self)
+        self.frame.pack()
+        self.color_generator = self.color_generator()
+
+    def activate(self, tag_tree):
+        self._prepare_tags(tag_tree)
+        self._set_position(tag_tree)
+        self._set_time()
+        self.update() # fixes position
+        self.deiconify()
+        self.update() # fixes content
+
+    def _prepare_tags(self, tag_tree):
+        for tag in tag_tree.tags():
+            windows = tag.nodes
+            if not windows:
+                try:
+                    windows = tag.floating_nodes[0].nodes
+                except IndexError: # no widows at all, label tag name
+                    self.add_label(tag.name,
+                                   self._FOCUS_COLOR,
+                                   self._TAG_PADDING)
+            for window in windows:
+                self.label_i3_window(tag, window)
+
+    def label_i3_window(self, tag, window):
+        if window.focused:
+            color = self._FOCUS_COLOR
+        elif window.urgent:
+            color = self._URGENT_COLOR
+        else:
+            color = next(self.color_generator)
+        self.add_label(f'{tag.name}           {window.window_class}',
+                       color,
+                       self._TAG_PADDING)
+        self.add_label(window.name, color)
+
+    def add_label(self, text, background_color=None, left_padding=None):
+        label = tkinter.Label(self.frame, #parent
+                              anchor = 'w', #left
+                              text = text,
+                              padx = left_padding,
+                              bg = background_color)
+        label.pack(expand=True, fill='x')
+
+    def color_generator(self):
+        while True:
+            yield self._COLOR_0
+            yield self._COLOR_1
+
+    def _set_position(self, tag_tree):
+        windows = tag_tree.leaves()
+        for window in windows:
+            if window.focused:
+                self.geometry(f'+{window.rect.x}+{window.rect.y + 75}')
+                break
+
+    def _set_time(self):
+        self.title(time.asctime(time.localtime()))
+
+    def show_entry(self, on_return_key):
+        self.entry = tkinter.Entry(self.frame)
+        self.entry.focus()
+        self.entry.bind('<Escape>', self.reset_after_entry)
+        self.entry.bind('<Return>', on_return_key)
+        self.entry.pack()
+
+    def show_rename_entry(self):
+        self.show_entry(self.process_rename_entry)
+
+    def process_rename_entry(self, _):
+        i3.rename_focused_window(self.entry.get())
+        self.reset_after_entry()
+
+    def show_tag_entry(self):
+        self.show_entry(self.process_tag_entry)
+
+    def process_tag_entry(self, _):
+        entry = self.entry.get()
+        self.reset()
+        i3.process_tag_entry(entry)
+        i3.main()
+
+    def reset_after_entry(self, _=None):
+        self.reset()
+        i3.main()
+
+    def reset(self):
+        self.clear()
+        self.update()
+        self.withdraw()
+
+    def clear(self):
+        self.frame.destroy()
+        self.frame = tkinter.Frame(self)
+        self.frame.pack()
+
+    def show_mode(self, command):
+        self.clear()
+        mode_hints = command[5:].split('|')
+        for hint in mode_hints:
+            self.add_label(hint)
+        self.update()
+
+
+class I3Wrapper(i3ipc.Connection):
+    def __init__(self):
+        super().__init__()
+        self.on(i3ipc.Event.BINDING, self.handle_mode)
         self._tag_tree = self.get_tree()
-        self.listen_for_hotkey = self.main
-        self._stop_listening_for_hotkey = self.main_quit
-        self.tags = self._tag_tree.nodes[1].nodes[1].nodes
+        self.previous_tag = self._tag_tree.find_focused().workspace().name
 
     @property
     def tags(self):
@@ -24,37 +137,108 @@ class ConnectionToI3WindowManager(i3ipc.Connection):
     def tags(self, list_):
         self._tag_tree.nodes[1].nodes[1].nodes = list_
 
-    def handle_hotkey(self, _, key_event):
-        if key_event.binding.symbol == 'Muhenkan':
-            self._stop_listening_for_hotkey()
-            self.update_tag_tree()
-            widget.activate(self._tag_tree)
+    def handle_mode(self, _, binding_event):
+        command = binding_event.binding.command
+        print(command)
+        key = binding_event.binding.symbol
+        if 'mode default' in command:
+            gui.reset()
+            if command.startswith('mode tag'):
+                self.switch_tag(self.find_target(key))
+        elif command == 'mode henkan':
+            self._update_tag_tree()
+            gui.activate(self._tag_tree)
+        elif command.endswith('retitle window'):
+            self.prepare_for_entry()
+            gui.show_rename_entry()
+        elif command.endswith('retag window'):
+            self.prepare_for_entry()
+            gui.show_tag_entry()
+        else:
+            gui.show_mode(command)
 
-    def update_tag_tree(self):
+    def prepare_for_entry(self):
+        self.main_quit()
+        self.command('mode default')
+
+    def find_target(self, key):
+        current_tag = self._tag_tree.find_focused().workspace().name
+        if current_tag == key:
+            target = self.previous_tag
+        else:
+            target = key
+        self.previous_tag = current_tag
+        return target
+
+    def switch_tag(self, target):
+        for tag in self.tags:
+            if tag.name == target:
+                for window in tag.nodes:
+                    self.command(f'[con_id={window.id}]move window to workspace {target}')
+                break
+        self.command(f'workspace {target}')
+
+    def _update_tag_tree(self):
         self.workspace_tree = self.get_tree()
-        self.inspect_tag_tree()
-        self.inspect_workspaces()
-        self.inspect_windows()
+        self._inspect_tag_tree()
+        self._inspect_workspaces()
+        self._inspect_windows()
         self.tags.sort(key=lambda x: x.name)
 
-    def inspect_tag_tree(self):
+    def process_tag_entry(self, entry):
+        current_tag = self._tag_tree.find_focused().workspace()
+        current_window = self._tag_tree.find_focused()
+        if entry == '':
+            self.command('kill') #kill focused window
+        else:
+            change_workspace_later = False
+            for char in entry:
+                if char == '.':
+                    change_workspace_later = True
+                    break
+                else:
+                    placed = self._add_to_existing_tag(char, current_window)
+                if not placed:
+                    new_tag = copy.copy(current_tag)
+                    new_tag.name = char
+                    new_tag.nodes = [current_window]
+                    self.tags.append(new_tag)
+            if change_workspace_later:
+                self.switch_tag(entry[0])
+            elif current_tag.name not in entry:
+                self.command('move window to workspace {}'.format(entry[0]))
+
+    def _add_to_existing_tag(self, char, current_window):
+        for tag in self.tags:
+            if char == tag.name:
+                tag.nodes.append(current_window)
+                return True
+        return False
+
+    def rename_focused_window(self, name):
+        subprocess.run(['xdotool',
+                        'set_window',
+                        '--name',
+                        name,
+                        str(self._tag_tree.find_focused().window)
+                        ])
+
+    def _inspect_tag_tree(self):
         current_workspace = self.workspace_tree.find_focused().workspace()
-        current_workspace.focused = True
-        'tag is now focused if it has focus or focused window'
-        self.tags = [
+        tags = [
                 current_workspace if current_workspace.name == tag.name else
                 tag.update_tag(self.workspace_tree)
                 for tag in self.tags
-                if tag.nodes
                     ]
+        self.tags = [tag for tag in tags if tag.nodes]
 
-    def inspect_workspaces(self):
+    def _inspect_workspaces(self):
         tag_names = [tag.name for tag in self.tags]
         for workspace in self.workspace_tree.workspaces():
             if workspace.name not in tag_names:
                 self.tags.append(workspace)
 
-    def inspect_windows(self):
+    def _inspect_windows(self):
         tagged_window_IDs = [window.id for window in self._tag_tree.leaves()]
         for window in self.workspace_tree.leaves():
             if window.id not in tagged_window_IDs:
@@ -66,225 +250,15 @@ class ConnectionToI3WindowManager(i3ipc.Connection):
 
 
 
-    def switch_tags(self, key_event):
-        widget.reset()
-        # TODO if self.workspace_not_as_tag():
-        # TODO self.rearrange_workspace
-        self.go_to_workspace(key_event)
-        self.listen_for_hotkey()
-
-    def go_to_workspace(self, key_event):
-        print(f'workspace {key_event.keysym}')
-        self.command(f'workspace {key_event.keysym}')
-
-    def do(self, command):
-        widget.reset()
-        self.command(command)
-        self.listen_for_hotkey()
-
-class GUI(tkinter.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title('i3tags') # TODO display sth interesting
-        self.attributes('-type', 'dialog')
-        self.frame = tkinter.Frame(self)
-        self.frame.pack()
-        self.bind('<Key>', mode_default.handle)
-        self.go_visible = self.deiconify
-
-    def activate(self, tags_tree):
-        self._update_position(tags_tree)
-        self.prepare_tags(tags_tree)
-        self.update()
-        self.go_visible()
-
-    def _update_position(self, tags_tree):
-        windows = tags_tree.leaves()
-        for window in windows:
-            if window.focused:
-                self.geometry(f'+{window.rect.x}+{window.rect.y + 75}')
-                break
-
-    def prepare_tags(self, tags_tree):
-        tags = tags_tree.tags()
-        for tag in tags:
-            if tag.focused:
-                Label_(f'{tag.name}', 'lightgreen')
-            else:
-                Label_(f'{tag.name}')
-            windows = tag.nodes
-            for window in windows:
-                if window.focused:
-                    Label_(f'  {window.window_title}', 'lightgreen')
-                elif window.urgent:
-                    Label_(f'  {window.window_title}', 'yellow')
-                else:
-                    Label_(f'  {window.window_title}')
-
-    def reset(self):
-        self.bind('<Key>', mode_default.handle)
-        self.clear()
-        self.update()
-        self.withdraw()
-
-    def clear(self):
-        self.frame.destroy()
-        self.frame = tkinter.Frame(self)
-        self.frame.pack()
-
-
-class Label_(tkinter.Label):
-    def __init__(self, text, background_color=None):
-        LEFT = 'w'
-        super().__init__(
-            widget.frame, anchor=LEFT, text=text, bg=background_color)
-        self.pack(expand=True, fill='x')
-
-
-class Mode:
-    """Parent of modes, no instance"""
-
-    def _call_key_symbol_as_method(self, key_event):
-        getattr(self, f'_handle_key_{key_event.keysym}')()
-
-    def _handle_key_Escape(self):
-        widget.reset()
-        i3.listen_for_hotkey()
-
-    def _remove_keyboard_modifiers(self):
-        subprocess.run(['xdotool', 'key', '--delay', '0', 'VoidSymbol'])
-
-
-class ModeDefault(Mode):
-    def handle(self, key_event):
-        print(key_event.keysym)
-        try:
-            self._call_key_symbol_as_method(key_event)
-        except AttributeError:
-            i3.switch_tags(key_event)
-
-    def _handle_key_ISO_Level2_Latch(self):
-        mode_directory = ModeDirectory('level2')
-        widget.bind('<KeyPress>', mode_directory.handle)
-        self._remove_keyboard_modifiers()
-
-    def _handle_key_ISO_Level5_Latch(self):
-        self._remove_keyboard_modifiers()
-        mode_entry = ModeEntry()  # mark
-
-    def _handle_key_h(self):
-        i3.do('focus left')
-
-    def _handle_key_l(self):
-        i3.do('focus right')
-
-    def _handle_key_period(self):
-        # spawn terminal
-        subprocess.run(['nohup', 'urxvtc', '-cd', '/home/h/'])
-        widget.reset()
-        i3.listen_for_hotkey()
-
-    def _handle_key_slash(self):
-        # spawn file manager
-        subprocess.run(['nohup', 'urxvtc', '-e', 'vifm'])
-        widget.reset()
-        i3.listen_for_hotkey()
-
-
-class ModeDirectory(Mode):
-    def __init__(self, relative_path):
-        self.remaining_options = self._get_subdirectory_files(relative_path)
-        self.compared_position = 0
-        widget.clear()
-        Label_('directory_mode', 'lightgreen')
-
-    def _get_subdirectory_files(self, relative_path):
-        this_file_path = os.path.realpath(__file__)
-        this_file_directory = os.path.dirname(this_file_path)
-        subdirectory = os.path.join(this_file_directory, relative_path)
-        subdirectory_files = os.listdir(subdirectory)
-        return subdirectory_files
-
-    def handle(self, key_event):
-        try:
-            self._call_key_symbol_as_method(key_event)
-        except AttributeError:
-            self._suggest_from_remaining_options(key_event)
-
-    def _suggest_from_remaining_options(self, key_event):
-        suggestions = [option for option in self.remaining_options
-                        if key_event.char == option[self.compared_position]]
-        if len(suggestions) > 1:
-            self.remaining_options = suggestions
-            prefix = os.path.commonprefix(suggestions)
-            self.compared_position = len(prefix)
-            widget.clear()
-            Label_(prefix, 'lightgreen')
-            options_prefix_hidden = [option[len(prefix):] for option in suggestions]
-            [Label_(option) for option in options_prefix_hidden]
-        elif len(suggestions) == 1:
-            launcher.run(suggestions[0])
-            widget.reset()
-            i3.listen_for_hotkey()
-        elif suggestions == []:
-            pass
-        else:
-            raise AssertionError
-
-
-class ModeEntry(Mode):
-    def __init__(self):
-        widget.unbind('<Key>')
-        self.entry = tkinter.Entry(widget.frame)
-        self.entry.bind('<Return>', self.handle)
-        self.entry.bind('<Escape>', self.handle)
-        self.entry.focus()
-        self.entry.pack()
-
-    def handle(self, key_event):
-        self._call_key_symbol_as_method(key_event)
-
-    def _handle_key_Return(self):
-        widget.withdraw()
-        self._process(self.entry.get())
-        widget.deiconify()
-        widget.reset()
-        i3.listen_for_hotkey()
-
-    def _process(self, entry):
-        if entry == '':
-            i3.command('kill')
-        elif entry == 'q':
-            widget.quit()
-        else:
-            i3.command(f'move container to workspace {entry}')
-
-
-class Launcher():
-    def spawn_terminal(self):
-        subprocess.run(['nohup', 'urxvtc', '-cd', '/home/h/'])
-        widget.reset()
-        i3.listen_for_hotkey()
-
-    def urxvtc(self, command):
-        subprocess.run(['urxvtc', '-e', command])
-
-    def run(self, command):
-        if command in os.listdir('/home/h/aa/bin/i3tags/urxvt'):
-            subprocess.Popen(['nohup', 'urxvtc', '-e', command])
-        else:
-            subprocess.Popen([command])
-
-
-
-class Con():
-    """'monkey patch', the class used by i3ipc is i3ipc.Con, this class
-      modifies/extends i3ipc.Con. The names are styled to appear as
-      ordinary class, but the methods must be assigned to i3ipc.Con
+class I3ipcConMonkeyPatch():
+    """Monkey patch, the class used by i3ipc is i3ipc.Con, this class
+      modifies/extends i3ipc.Con. Do not want to inherit it and thus
+      change identity as it is called by multiple i3ipc classes.
+      Methods must be assigned to i3ipc.Con
       class, see the end of class"""
-    self = i3ipc.Con
-    self.tag = self.workspace
-    self.tags = self.workspaces
+    Con = i3ipc.Con
+    Con.tag = Con.workspace
+    Con.tags = Con.workspaces
 
     def remove_focus(self):
         self.focused = False
@@ -300,14 +274,12 @@ class Con():
         ]
         return self
 
-    self.remove_focus = remove_focus
-    self.update_tag = update_tag
+    Con.remove_focus = remove_focus
+    Con.update_tag = update_tag
 
 
+gui = TkWrapper()
+i3 = I3Wrapper()
 if __name__ == '__main__':
-    i3 = ConnectionToI3WindowManager()
-    launcher = Launcher()
-    mode_default = ModeDefault()
-    widget = GUI()
     i3.main()
-    widget.mainloop()
+    gui.mainloop()
