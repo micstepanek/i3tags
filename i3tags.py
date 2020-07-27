@@ -176,7 +176,10 @@ class I3Wrapper(i3ipc.Connection):
                 for window in tag.nodes:
                     self.command(f'[con_id={window.id}]move window to workspace {target}')
                 break
-        self.command(f'workspace {target}')
+        #self.command(f'workspace {target}')
+        # - blocked by PyCharm if going to empty workspace
+        # subprocess with i3-msg works
+        subprocess.run(['i3-msg', 'workspace', target])
 
     def _update_tag_tree(self):
         self.workspace_tree = self.get_tree()
@@ -247,7 +250,6 @@ class I3Wrapper(i3ipc.Connection):
                                 .find_by_id(window.id)
                                 .workspace().id)
                 self._tag_tree.find_by_id(workspace_id).nodes.append(window)
-
 
 
 class I3ipcConMonkeyPatch():
