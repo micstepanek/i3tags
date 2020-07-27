@@ -174,6 +174,7 @@ class I3Wrapper(i3ipc.Connection):
         for tag in self.tags:
             if tag.name == target:
                 for window in tag.nodes:
+                    self.command(f'[con_id={window.id}]move window to workspace tmp')
                     self.command(f'[con_id={window.id}]move window to workspace {target}')
                 break
         #self.command(f'workspace {target}')
