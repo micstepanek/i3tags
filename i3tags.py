@@ -7,7 +7,7 @@ import subprocess
 import copy
 
 
-class TkInter(tkinter.Tk):
+class TkWrapper(tkinter.Tk):
     _FOCUS_COLOR = '#cfc'
     _URGENT_COLOR = 'yellow'
     _COLOR_0 = 'white'
@@ -25,14 +25,57 @@ class TkInter(tkinter.Tk):
         self._prepare_tags(tag_tree)
         self._set_position(tag_tree)
         self._set_time()
-        self.update()
+        self.update() # fixes position
         self.deiconify()
-        self.update()
+        self.update() # fixes content
+
+    def _prepare_tags(self, tag_tree):
+        for tag in tag_tree.tags():
+            windows = tag.nodes
+            if not windows:
+                try:
+                    windows = tag.floating_nodes[0].nodes
+                except IndexError: # no widows at all, label tag name
+                    self.add_label(tag.name,
+                                   self._FOCUS_COLOR,
+                                   self._TAG_PADDING)
+            for window in windows:
+                self.label_i3_window(tag, window)
+
+    def label_i3_window(self, tag, window):
+        if window.focused:
+            color = self._FOCUS_COLOR
+        elif window.urgent:
+            color = self._URGENT_COLOR
+        else:
+            color = next(self.color_generator)
+        self.add_label(f'{tag.name}           {window.window_class}',
+                       color,
+                       self._TAG_PADDING)
+        self.add_label(window.name, color)
+
+    def add_label(self, text, background_color=None, left_padding=None):
+        label = tkinter.Label(self.frame, #parent
+                              anchor = 'w', #left
+                              text = text,
+                              padx = left_padding,
+                              bg = background_color)
+        label.pack(expand=True, fill='x')
 
     def color_generator(self):
         while True:
             yield self._COLOR_0
             yield self._COLOR_1
+
+    def _set_position(self, tag_tree):
+        windows = tag_tree.leaves()
+        for window in windows:
+            if window.focused:
+                self.geometry(f'+{window.rect.x}+{window.rect.y + 75}')
+                break
+
+    def _set_time(self):
+        self.title(time.asctime(time.localtime()))
 
     def show_entry(self, on_return_key):
         self.entry = tkinter.Entry(self.frame)
@@ -65,50 +108,6 @@ class TkInter(tkinter.Tk):
         self.clear()
         self.update()
         self.withdraw()
-
-    def _set_time(self):
-        self.title(time.asctime(time.localtime()))
-
-    def _set_position(self, tag_tree):
-        windows = tag_tree.leaves()
-        for window in windows:
-            if window.focused:
-                self.geometry(f'+{window.rect.x}+{window.rect.y + 75}')
-                break
-
-    def _prepare_tags(self, tag_tree):
-        for tag in tag_tree.tags():
-            windows = tag.nodes
-            if not windows:
-                try:
-                    windows = tag.floating_nodes[0].nodes
-                except IndexError:
-                    self.add_label(tag.name,
-                                   self._FOCUS_COLOR,
-                                   self._TAG_PADDING)
-            for window in windows:
-                self.label_i3_window(tag, window)
-
-
-    def label_i3_window(self, tag, window):
-        if window.focused:
-            color = self._FOCUS_COLOR
-        elif window.urgent:
-            color = self._URGENT_COLOR
-        else:
-            color = next(self.color_generator)
-        self.add_label(f'{tag.name}           {window.window_class}',
-                       color,
-                       self._TAG_PADDING)
-        self.add_label(window.name, color)
-
-    def add_label(self, text, background_color=None, left_padding=None):
-        label = tkinter.Label(self.frame, #parent
-                              anchor = 'w', #left
-                              text = text,
-                              padx = left_padding,
-                              bg = background_color)
-        label.pack(expand=True, fill='x')
 
     def clear(self):
         self.frame.destroy()
@@ -278,7 +277,7 @@ class Con():
     self.update_tag = update_tag
 
 
-gui = TkInter()
+gui = TkWrapper()
 i3 = I3Wrapper()
 if __name__ == '__main__':
     i3.main()
