@@ -6,6 +6,7 @@ Please see 'dev' branch for more recent development.
 Resolvable issues:
 - some hard-code
 - retagging causes temporal duplicity in tree
+- retitling works only on window in current tag
 
 No-idea issues:
 - switching between tags that use the same window causes
