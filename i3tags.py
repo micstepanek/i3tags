@@ -92,9 +92,9 @@ class TkWrapper(tkinter.Tk):
         self.reset_after_entry()
 
     def show_tag_entry(self):
-        self.show_entry(self.process_tag_entry)
+        self.show_entry(self.redirect_tag_entry)
 
-    def process_tag_entry(self, _):
+    def redirect_tag_entry(self, _):
         entry = self.entry.get()
         self.reset()
         i3.process_tag_entry(entry)
@@ -192,6 +192,7 @@ class I3Wrapper(i3ipc.Connection):
     def process_tag_entry(self, entry):
         current_tag = self._tag_tree.find_focused().workspace()
         current_window = self._tag_tree.find_focused()
+        self._tag_tree.remove_node_by_id(current_window.id)
         if entry == '':
             self.command('kill') #kill focused window
         else:
@@ -268,6 +269,11 @@ class I3ipcConMonkeyPatch():
     Con.tag = Con.workspace
     Con.tags = Con.workspaces
 
+    def remove_node_by_id(self, removed_id):
+        self.nodes = [node for node in self.nodes if node.id != removed_id]
+        for node in self.nodes:
+            node.remove_node_by_id(removed_id)
+
     def remove_focus(self):
         self.focused = False
         return self
@@ -284,6 +290,7 @@ class I3ipcConMonkeyPatch():
 
     Con.remove_focus = remove_focus
     Con.update_tag = update_tag
+    Con.remove_node_by_id = remove_node_by_id
 
 
 gui = TkWrapper()

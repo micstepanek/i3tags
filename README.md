@@ -5,7 +5,6 @@ Please see 'dev' branch for more recent development.
 
 Resolvable issues:
 - some hard-code
-- retagging causes temporal duplicity in tree
 
 No-idea issues:
 - switching between tags that use the same window causes
