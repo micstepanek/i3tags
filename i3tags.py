@@ -190,6 +190,9 @@ class I3Wrapper(i3ipc.Connection):
         self.tags.sort(key=lambda x: x.name)
 
     def process_tag_entry(self, entry):
+        if entry == 'quit':
+            gui.destroy()
+            exit()
         current_tag = self._tag_tree.find_focused().workspace()
         current_window = self._tag_tree.find_focused()
         self._tag_tree.remove_node_by_id(current_window.id)
