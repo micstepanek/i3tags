@@ -145,10 +145,12 @@ class I3Wrapper(i3ipc.Connection):
             gui.reset()
             if command.startswith('mode tag'):
                 self.switch_tag(self.find_target(key))
+            elif command.startswith('mode branch'):
+                self.branch_windows(key)
         elif command == 'mode henkan':
             self._update_tag_tree()
             gui.activate(self._tag_tree)
-        elif command.endswith('retitle window'):
+        elif command.endswith('title window'):
             self.prepare_for_entry()
             gui.show_rename_entry()
         elif command.endswith('retag window'):
@@ -156,6 +158,13 @@ class I3Wrapper(i3ipc.Connection):
             gui.show_tag_entry()
         else:
             gui.show_mode(command)
+
+    def branch_windows(self, tag_name):
+        current_tag = self._tag_tree.find_focused().tag()
+        new_tag = copy.copy(current_tag)
+        new_tag.name = tag_name
+        self.tags.append(new_tag)
+        i3.command(f'move window to workspace {tag_name}')
 
     def prepare_for_entry(self):
         self.main_quit()
