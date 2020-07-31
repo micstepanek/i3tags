@@ -87,7 +87,7 @@ class BusinessLogic:
 
     def process_tag_entry(self, entry):
         if entry == 'quit':
-            gui.destroy()
+            tk_root.destroy()
             exit()
         current_tag = self._tag_tree.find_focused().workspace()
         current_window = self._tag_tree.find_focused()
@@ -158,7 +158,7 @@ class BusinessLogic:
                 self._tag_tree.find_by_id(workspace_id).nodes.append(window)
 
 
-class GraphicalUserInterfaceWrapper(tkinter.Tk):
+class GraphicalUserInterfaceWrapper:
     _FOCUS_COLOR = '#cfc'
     _URGENT_COLOR = 'yellow'
     _COLOR_0 = 'white'
@@ -166,9 +166,8 @@ class GraphicalUserInterfaceWrapper(tkinter.Tk):
     _TAG_PADDING = 40
 
     def __init__(self):
-        super().__init__()
-        self.attributes('-type', 'dialog')
-        self.frame = tkinter.Frame(self)
+        tk_root.attributes('-type', 'dialog')
+        self.frame = tkinter.Frame(tk_root)
         self.frame.pack()
         self.color_generator = self.color_generator()
 
@@ -176,9 +175,9 @@ class GraphicalUserInterfaceWrapper(tkinter.Tk):
         self._prepare_tags(tag_tree)
         self._set_position(tag_tree)
         self._set_time()
-        self.update() # fixes position
-        self.deiconify()
-        self.update() # fixes content
+        tk_root.update() # fixes position
+        tk_root.deiconify()
+        tk_root.update() # fixes content
 
     def _prepare_tags(self, tag_tree):
         for tag in tag_tree.tags():
@@ -222,11 +221,11 @@ class GraphicalUserInterfaceWrapper(tkinter.Tk):
         windows = tag_tree.leaves()
         for window in windows:
             if window.focused:
-                self.geometry(f'+{window.rect.x}+{window.rect.y + 75}')
+                tk_root.geometry(f'+{window.rect.x}+{window.rect.y + 75}')
                 break
 
     def _set_time(self):
-        self.title(time.asctime(time.localtime()))
+        tk_root.title(time.asctime(time.localtime()))
 
     def show_entry(self, on_return_key):
         self.entry = tkinter.Entry(self.frame)
@@ -257,12 +256,12 @@ class GraphicalUserInterfaceWrapper(tkinter.Tk):
 
     def reset(self):
         self.clear()
-        self.update()
-        self.withdraw()
+        tk_root.update()
+        tk_root.withdraw()
 
     def clear(self):
         self.frame.destroy()
-        self.frame = tkinter.Frame(self)
+        self.frame = tkinter.Frame(tk_root)
         self.frame.pack()
 
     def show_mode(self, command):
@@ -270,7 +269,7 @@ class GraphicalUserInterfaceWrapper(tkinter.Tk):
         mode_hints = command[5:].split('|')
         for hint in mode_hints:
             self.add_label(hint)
-        self.update()
+        tk_root.update()
 
 
 class I3ipcConMonkeyPatch():
@@ -308,8 +307,9 @@ class I3ipcConMonkeyPatch():
 
 
 i3 = i3ipc.Connection()
+tk_root = tkinter.Tk()
 gui = GraphicalUserInterfaceWrapper()
 logic = BusinessLogic()
 if __name__ == '__main__':
     logic.listen_for_bindings()
-    gui.mainloop()
+    tk_root.mainloop()
