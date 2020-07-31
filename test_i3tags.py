@@ -6,7 +6,7 @@ def test_tags():
 
 class TestI3ipcConMonkeyPatch:
     def test_remove_focus_on_windows(self):
-        windows = logic.get_tree().leaves()
+        windows = i3.get_tree().leaves()
         for window in windows:
             window.remove_focus()
             assert window.focused == False
