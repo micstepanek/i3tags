@@ -122,6 +122,7 @@ class BusinessLogic:
                 self.switch_tag(entry[0])
             elif current_tag.name not in entry:
                 i3.command('move window to workspace {}'.format(entry[0]))
+        self.listen_for_bindings()
 
     def _add_to_existing_tag(self, char, current_window):
         for tag in self.tags:
