@@ -50,7 +50,7 @@ class BusinessLogic:
             gui.activate(self._tag_tree)
         elif command.endswith('title window'):
             self.prepare_for_entry()
-            gui.show_rename_entry()
+            gui.show_retitle_entry()
         elif command.endswith('retag window'):
             self.prepare_for_entry()
             gui.show_tag_entry()
@@ -246,27 +246,27 @@ class HighGUI:
     def show_entry(self, on_return_key):
         self.entry = tkinter.Entry(self.frame)
         self.entry.focus()
-        self.entry.bind('<Escape>', self.reset_after_entry)
+        self.entry.bind('<Escape>', self._escape_from_entry)
         self.entry.bind('<Return>', on_return_key)
         self.entry.pack()
 
-    def show_rename_entry(self):
-        self.show_entry(self.process_rename_entry)
-
-    def process_rename_entry(self, _):
-        logic.retitle_focused_window(self.entry.get())
-        self.reset_after_entry()
+    def show_retitle_entry(self):
+        self.show_entry(self._handle_retitle_entry)
 
     def show_tag_entry(self):
-        self.show_entry(self.redirect_tag_entry)
+        self.show_entry(self._handle_tag_entry)
 
-    def redirect_tag_entry(self, _):
+    def _handle_retitle_entry(self, _):
+        entry = self.entry.get()
+        self.reset()
+        logic.retitle_focused_window(entry)
+
+    def _handle_tag_entry(self, _):
         entry = self.entry.get()
         self.reset()
         logic.process_tag_entry(entry)
-        logic.listen_for_bindings()
 
-    def reset_after_entry(self, _=None):
+    def _escape_from_entry(self, _=None):
         self.reset()
         logic.listen_for_bindings()
 
