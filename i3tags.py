@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
+"""Emulate tags in i3. Run as service.
+
+Call in following directions
+ i3 <-> logic=BusinessLogic <-> gui=HighGUI -> tkinter
+with no jumps, e.g. logic may call gui,
+but i3 shouldn't call gui directly."""
+
 import i3ipc
 import tkinter
 import time
 import subprocess
 import copy
-
-"""Call instances in following directions
- i3 <-> logic <-> gui -> tk_root
-with no jumps, e.g. i3 should not call gui directly."""
 
 
 class BusinessLogic:
