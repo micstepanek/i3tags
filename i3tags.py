@@ -98,7 +98,7 @@ class BusinessLogic:
 
     def process_tag_entry(self, entry):
         if entry == 'quit':
-            tk_root.destroy()
+            gui.quit()
             exit()
         current_tag = self._tag_tree.find_focused().workspace()
         current_window = self._tag_tree.find_focused()
@@ -286,6 +286,10 @@ class HighGUI:
         for hint in mode_hints:
             self.add_label(hint)
         tk_root.update()
+
+    def quit(self):
+        """Use to avoid calling tk_root from logic."""
+        tk_root.destroy()
 
 
 class I3ipcConMonkeyPatch():
