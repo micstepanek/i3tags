@@ -17,7 +17,7 @@ import copy
 class BusinessLogic:
     """Central class.
 
-    Do not call tk_root from here, call gui instead."""
+    Don't call tk_root from here, call gui instead."""
 
     def __init__(self):
         i3.on(i3ipc.Event.BINDING, self.handle_binding)
@@ -300,7 +300,7 @@ class I3ipcConMonkeyPatch():
     """Monkey patch, the class used by i3ipc is i3ipc.Con.
 
     This class
-    modifies/extends i3ipc.Con. Do not want to inherit i3ipc.Con and
+    modifies/extends i3ipc.Con. Don't want to inherit i3ipc.Con and
     thus change identity as it is called by multiple i3ipc classes.
     Methods must be assigned to i3ipc.Con
     class, see the end of class. Call self only."""
