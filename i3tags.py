@@ -29,7 +29,17 @@ class BusinessLogic:
         #aliases
         self.listen_for_bindings = i3.main
         self.stop_listening = i3.main_quit
-
+        self.nop_mapping = {
+            'activate': self.activate,
+            'reset': gui.reset,
+            'mode': gui.show_mode,
+            'switch': self.switch_tag,
+            'retag': self.show_retag_entry,
+            'add': gui.add_mode,
+            'branch': self.branch_tag,
+            'title': self.show_retitle_entry
+            # add to your i3 config command e.g. ;nop reset
+        }
     @property
     def tags(self):
         return self._tag_tree.nodes[1].nodes[1].nodes
@@ -40,33 +50,28 @@ class BusinessLogic:
 
     def handle_binding(self, _, binding_event):
         command = binding_event.binding.command
-        print(command)
-        key = binding_event.binding.symbol
-        if 'mode default' in command:
-            gui.reset()
-            if command.startswith('nop tag'):
-                #'nop tag' means: no i3 operation with comment 'tag'
-                self.switch_tag(self.find_target(key))
-            elif command.startswith('nop branch'):
-                self.branch_windows(key)
-        elif command == 'mode henkan':
-            i3.command('fullscreen disable')
-            self._update_tag_tree()
-            gui.activate(self._tag_tree)
-        elif command.endswith('manual modes'):
-            gui.add_label('manual modes [tmb]')
-            gui.update()
-            print(0)
-        elif command.endswith('title window'):
-            self.prepare_for_entry()
-            gui.show_retitle_entry()
-        elif command.endswith('retag window'):
-            self.prepare_for_entry()
-            gui.show_tag_entry()
-        else:
-            gui.show_mode(command)
+        if 'nop' in command:
+            behind_nop = binding_event.binding.command.split('nop ', 1)[1]
+            nop_list = behind_nop.split(';', 1)[0].split()
+            print(nop_list)
+            for comment in nop_list:
+                self.nop_mapping[comment](binding_event)
 
-    def branch_windows(self, tag_name):
+    def activate(self, _):
+        i3.command('fullscreen disable')
+        self._update_tag_tree()
+        gui.activate(self._tag_tree)
+
+    def show_retitle_entry(self, _):
+        self.prepare_for_entry()
+        gui.show_retitle_entry()
+
+    def show_retag_entry(self, _):
+        self.prepare_for_entry()
+        gui.show_tag_entry()
+
+    def branch_tag(self, binding_event):
+        tag_name = binding_event.binding.symbol
         current_tag = self._tag_tree.find_focused().tag()
         new_tag = copy.copy(current_tag)
         new_tag.name = tag_name
@@ -86,7 +91,9 @@ class BusinessLogic:
         self.previous_tag = current_tag
         return target
 
-    def switch_tag(self, target):
+    def switch_tag(self, binding_event):
+        gui.reset()
+        target = self.find_target(binding_event.binding.symbol)
         #for tag in self.tags:
         #    if tag.name == target:
         #        for window in tag.nodes:
@@ -271,6 +278,7 @@ class HighGUI:
         entry = self.entry.get()
         self.reset()
         logic.retitle_focused_window(entry)
+        logic.listen_for_bindings()
 
     def _handle_tag_entry(self, _):
         entry = self.entry.get()
@@ -281,7 +289,7 @@ class HighGUI:
         self.reset()
         logic.listen_for_bindings()
 
-    def reset(self):
+    def reset(self, _=None):
         self.clear()
         tk_root.update()
         tk_root.withdraw()
@@ -291,9 +299,13 @@ class HighGUI:
         self.frame = tkinter.Frame(tk_root)
         self.frame.pack()
 
-    def show_mode(self, command):
+    def show_mode(self, binding_event):
         self.clear()
-        mode_hints = command[5:].split('|')
+        self.add_mode(binding_event)
+
+    def add_mode(self, binding_event):
+        behind_mode = binding_event.binding.command.split('mode ', 1)[-1]
+        mode_hints = behind_mode.split(';', 1)[0].split('|')
         for hint in mode_hints:
             self.add_label(hint)
         tk_root.update()
