@@ -51,6 +51,10 @@ class BusinessLogic:
         elif command == 'mode henkan':
             self._update_tag_tree()
             gui.activate(self._tag_tree)
+        elif command.endswith('manual modes'):
+            gui.add_label('manual modes [tmb]')
+            gui.update()
+            print(0)
         elif command.endswith('title window'):
             self.prepare_for_entry()
             gui.show_retitle_entry()
@@ -190,6 +194,7 @@ class HighGUI:
         self.frame = tkinter.Frame(tk_root)
         self.frame.pack()
         self.color_generator = self.color_generator()
+        self.update = tk_root.update
 
     def activate(self, tag_tree):
         self._prepare_tags(tag_tree)
