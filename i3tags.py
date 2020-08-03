@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Emulate tags in i3. Run as service.
+"""Emulate tags to i3wm. Run as service.
 
 Call in following directions
  i3 <-> logic=BusinessLogic <-> gui=HighGUI -> tkinter
@@ -343,5 +343,5 @@ tk_root = tkinter.Tk()
 gui = HighGUI()
 logic = BusinessLogic()
 if __name__ == '__main__':
-    logic.listen_for_bindings()
+    logic.listen_for_bindings() #start hidden
     tk_root.mainloop()
