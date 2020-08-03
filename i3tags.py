@@ -44,9 +44,10 @@ class BusinessLogic:
         key = binding_event.binding.symbol
         if 'mode default' in command:
             gui.reset()
-            if command.startswith('mode tag'):
+            if command.startswith('nop tag'):
+                #'nop tag' means: no i3 operation with comment 'tag'
                 self.switch_tag(self.find_target(key))
-            elif command.startswith('mode branch'):
+            elif command.startswith('nop branch'):
                 self.branch_windows(key)
         elif command == 'mode henkan':
             i3.command('fullscreen disable')
