@@ -49,6 +49,7 @@ class BusinessLogic:
             elif command.startswith('mode branch'):
                 self.branch_windows(key)
         elif command == 'mode henkan':
+            i3.command('fullscreen disable')
             self._update_tag_tree()
             gui.activate(self._tag_tree)
         elif command.endswith('manual modes'):
