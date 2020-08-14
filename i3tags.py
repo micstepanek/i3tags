@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.8
 
 """Emulate tags to i3wm. Run as service.
 
@@ -26,9 +26,6 @@ class BusinessLogic:
         # as well as japanese keys
         self._tag_tree = i3.get_tree()
         self.previous_tag = self._tag_tree.find_focused().workspace().name
-        #aliases
-        self.listen_for_bindings = i3.main
-        self.stop_listening = i3.main_quit
         self.nop_mapping = {
             'activate': self.activate,
             'reset': gui.reset,
@@ -38,7 +35,8 @@ class BusinessLogic:
             'add': gui.add_mode,
             'branch': self.branch_tag,
             'title': self.show_retitle_entry
-            # add to your i3 config command e.g. ;nop reset
+            # add to your i3 config like this:
+            # bindsym Escape mode default; nop reset
         }
     @property
     def tags(self):
@@ -56,6 +54,12 @@ class BusinessLogic:
             print(nop_list)
             for comment in nop_list:
                 self.nop_mapping[comment](binding_event)
+
+    def listen_for_bindings(self):
+        i3.main()
+
+    def stop_listening(self):
+        i3.main_quit()
 
     def activate(self, _):
         i3.command('fullscreen disable')
@@ -202,7 +206,7 @@ class HighGUI:
         tk_root.attributes('-type', 'dialog')
         self.frame = tkinter.Frame(tk_root)
         self.frame.pack()
-        self.color_generator = self.color_generator()
+        self.color_generator = self.color_generator_function()
         self.update = tk_root.update
 
     def activate(self, tag_tree):
@@ -246,7 +250,7 @@ class HighGUI:
                               bg = background_color)
         label.pack(expand=True, fill='x')
 
-    def color_generator(self):
+    def color_generator_function(self):
         while True:
             yield self._COLOR_0
             yield self._COLOR_1
