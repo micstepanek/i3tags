@@ -355,7 +355,7 @@ class I3ipcConMonkeyPatch():
     Con.remove_node_by_id = remove_node_by_id
 
 
-i3 = i3ipc.Connection()
+i3 = i3ipc.Connection(auto_reconnect = True)
 tk_root = tkinter.Tk()
 gui = HighGUI()
 logic = BusinessLogic()
