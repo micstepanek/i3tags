@@ -25,7 +25,8 @@ class BusinessLogic:
         # overlapping sequences and multiple keys at once,
         # as well as japanese keys
         self._tag_tree = i3.get_tree()
-        self.previous_tag = self._tag_tree.find_focused().workspace().name
+        self._workspace_tree = i3.get_tree()
+        self.previous_tag_name = self._tag_tree.find_focused().tag().name
         self.nop_mapping = {
             'activate': self.activate,
             'reset': gui.reset,
@@ -86,31 +87,41 @@ class BusinessLogic:
         self.stop_listening()
         i3.command('mode default')
 
-    def find_target(self, key):
-        current_tag = self._tag_tree.find_focused().workspace().name
-        if current_tag == key:
-            target = self.previous_tag
+    def find_target_name(self, key):
+        current_tag_name = self._tag_tree.find_focused().workspace().name
+        if current_tag_name == key:
+            target = self.previous_tag_name
         else:
             target = key
-        self.previous_tag = current_tag
+        self.previous_tag_name = current_tag_name
         return target
 
     def switch_tag(self, binding_event):
         gui.reset()
-        target = self.find_target(binding_event.binding.symbol)
-        #for tag in self.tags:
-        #    if tag.name == target:
-        #        for window in tag.nodes:
-        #            self.command(f'[con_id={window.id}]move window to workspace tmp')
-        #            self.command(f'[con_id={window.id}]move window to workspace {target}')
-        #        break
-        #self.command(f'workspace {target}')
+        target_name = self.find_target_name(binding_event.binding.symbol)
+        target_workspace = self._workspace_tree.find_tag_by_name(target_name)
+        target_tag = self._tag_tree.find_tag_by_name(target_name)
+        if target_tag:
+            for i, window in enumerate(target_tag.nodes):
+               try:
+                   if window.id == target_workspace.nodes[i].id:
+                       pass
+                   else:
+                       self._reload_window_to_workspace(window, target_name)
+               except:
+                   self._reload_window_to_workspace(window, target_name)
+
+        #self.command(f'workspace {target_name}')
         # - blocked by PyCharm if going to empty workspace
         # subprocess with i3-msg works
-        subprocess.run(['i3-msg', 'workspace', target])
+        subprocess.run(['i3-msg', 'workspace', target_name])
+
+    def _reload_window_to_workspace(self, window, target_name):
+        #i3.command(f'[con_id={window.id}]move window to workspace tmp')
+        i3.command(f'[con_id={window.id}] move window to workspace {target_name}')
 
     def _update_tag_tree(self):
-        self.workspace_tree = i3.get_tree()
+        self._workspace_tree = i3.get_tree()
         self._inspect_tag_tree()
         self._inspect_workspaces()
         self._inspect_windows()
@@ -165,26 +176,26 @@ class BusinessLogic:
                         ])
 
     def _inspect_tag_tree(self):
-        current_workspace = self.workspace_tree.find_focused().workspace()
+        current_workspace = self._workspace_tree.find_focused().workspace()
         tags = [
                 current_workspace if current_workspace.name == tag.name else
-                tag.update_tag(self.workspace_tree)
+                tag.update_tag(self._workspace_tree)
                 for tag in self.tags
                     ]
         self.tags = [tag for tag in tags if tag.nodes]
 
     def _inspect_workspaces(self):
         tag_names = [tag.name for tag in self.tags]
-        for workspace in self.workspace_tree.workspaces():
+        for workspace in self._workspace_tree.workspaces():
             if workspace.name not in tag_names:
                 self.tags.append(workspace)
 
     def _inspect_windows(self):
         tagged_window_IDs = [window.id for window in self._tag_tree.leaves()]
-        for window in self.workspace_tree.leaves():
+        for window in self._workspace_tree.leaves():
             if window.id not in tagged_window_IDs:
                 #copy window frow workspace to tag
-                workspace_id = (self.workspace_tree
+                workspace_id = (self._workspace_tree
                                 .find_by_id(window.id)
                                 .workspace().id)
                 self._tag_tree.find_by_id(workspace_id).nodes.append(window)
@@ -350,9 +361,16 @@ class I3ipcConMonkeyPatch():
         ]
         return self
 
+    def find_tag_by_name(self, name):
+        for tag in self.tags():
+            if tag.name == name:
+                return tag
+
+
     Con.remove_focus = remove_focus
     Con.update_tag = update_tag
     Con.remove_node_by_id = remove_node_by_id
+    Con.find_tag_by_name = find_tag_by_name
 
 
 i3 = i3ipc.Connection(auto_reconnect = True)
