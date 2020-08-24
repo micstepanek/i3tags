@@ -12,6 +12,7 @@ import tkinter
 import time
 import subprocess
 import copy
+import logging
 
 
 class BusinessLogic:
@@ -52,7 +53,7 @@ class BusinessLogic:
         if 'nop' in command:
             behind_nop = binding_event.binding.command.split('nop ', 1)[1]
             nop_list = behind_nop.split(';', 1)[0].split()
-            print(nop_list)
+            logging.debug(nop_list)
             for comment in nop_list:
                 self.nop_mapping[comment](binding_event)
 
@@ -378,5 +379,6 @@ tk_root = tkinter.Tk()
 gui = HighGUI()
 logic = BusinessLogic()
 if __name__ == '__main__':
+    logging.basicConfig(filename='log.log', level=logging.DEBUG)
     logic.listen_for_bindings() #start hidden
     tk_root.mainloop()
