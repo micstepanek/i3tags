@@ -14,7 +14,6 @@ import subprocess
 import copy
 import logging
 
-
 class BusinessLogic:
     """Central class.
 
@@ -379,6 +378,6 @@ tk_root = tkinter.Tk()
 gui = HighGUI()
 logic = BusinessLogic()
 if __name__ == '__main__':
-    logging.basicConfig(filename='log.log', level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     logic.listen_for_bindings() #start hidden
     tk_root.mainloop()
