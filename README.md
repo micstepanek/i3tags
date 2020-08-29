@@ -5,6 +5,8 @@ Please see 'dev' branch for more recent development.
 
 Resolvable issues:
 - hard-code
+- long functions
+- documentation
 - Tcl cannot do characters above U+FFFF
 
 Tough issues:
