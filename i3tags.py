@@ -131,16 +131,19 @@ class BusinessLogic:
         if entry == 'quit':
             gui.quit()
             exit()
+        # get variables
         current_tag = self._tag_tree.find_focused().workspace()
         current_window = self._tag_tree.find_focused()
+        # remove current window from tag tree
         self._tag_tree.remove_node_by_id(current_window.id)
+        #
         if entry == '':
             i3.command('kill') #kill focused window
         else:
-            change_workspace_later = False
+            change_workspace_after_retagging = False
             for char in entry:
                 if char == '.':
-                    change_workspace_later = True
+                    change_workspace_after_retagging = True
                     break
                 else:
                     placed = self._add_to_existing_tag(char, current_window)
@@ -149,7 +152,7 @@ class BusinessLogic:
                     new_tag.name = char
                     new_tag.nodes = [current_window]
                     self.tags.append(new_tag)
-            if change_workspace_later:
+            if change_workspace_after_retagging:
                 self.switch_tag(entry[0])
             elif current_tag.name not in entry:
                 i3.command('move window to workspace {}'.format(entry[0]))
