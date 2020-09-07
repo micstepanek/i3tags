@@ -13,6 +13,7 @@ import time
 import subprocess
 import copy
 import logging
+import multipledispatch
 
 class BusinessLogic:
     """Central class.
@@ -96,9 +97,14 @@ class BusinessLogic:
         self.previous_tag_name = current_tag_name
         return target
 
+    @multipledispatch.dispatch(object)
     def switch_tag(self, binding_event):
+        self.switch_tag(binding_event.binding.symbol)
+
+    @multipledispatch.dispatch(str)
+    def switch_tag(self, symbol):
         gui.reset()
-        target_name = self.find_target_name(binding_event.binding.symbol)
+        target_name = self.find_target_name(symbol)
         target_workspace = self._workspace_tree.find_tag_by_name(target_name)
         target_tag = self._tag_tree.find_tag_by_name(target_name)
         if target_tag:
