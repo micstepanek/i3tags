@@ -1,6 +1,7 @@
 #pytest
 from i3tags import *
 
+
 def test_tags():
     assert logic.tags is logic._tag_tree.nodes[1].nodes[1].nodes
 

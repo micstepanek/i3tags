@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.8
+#!/usr/bin/env python3.6
 
 """Emulate tags to i3wm. Run as service.
 
