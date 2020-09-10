@@ -239,6 +239,8 @@ class HighGUI:
 
     def _prepare_tags(self, tag_tree):
         for tag in tag_tree.tags():
+            if tag.name == 'hidden':
+                continue
             windows = tag.nodes
             if not windows:
                 try:
