@@ -158,7 +158,7 @@ class BusinessLogic:
                     new_tag.name = char
                     new_tag.nodes = [current_window]
                     self.tags.append(new_tag)
-            if change_workspace_after_retagging:
+            if change_workspace_after_retagging == True:
                 self.switch_tag(entry[0])
             elif current_tag.name not in entry:
                 i3.command('move window to workspace {}'.format(entry[0]))
