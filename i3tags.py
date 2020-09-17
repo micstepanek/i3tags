@@ -14,6 +14,8 @@ import subprocess
 import copy
 import logging
 import multipledispatch
+import unicodedata
+
 
 class BusinessLogic:
     """Central class.
@@ -265,9 +267,10 @@ class HighGUI:
         self.add_label(window.name, color)
 
     def add_label(self, text, background_color=None, left_padding=None):
+        deunicoded = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore')
         label = tkinter.Label(self.frame, #parent
                               anchor = 'w', #left
-                              text = text,
+                              text = deunicoded,
                               padx = left_padding,
                               bg = background_color)
         label.pack(expand=True, fill='x')
