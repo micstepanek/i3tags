@@ -7,14 +7,18 @@ Call in following directions
 with no jumps, e.g. logic may call gui,
 but i3 shouldn't call gui directly."""
 
-import i3ipc
-import tkinter
-import time
-import subprocess
 import copy
+import i3ipc
 import logging
 import multipledispatch
+import subprocess
+import socket
+import sys
+import tkinter
+import time
 import unicodedata
+from PySide2.QtCore import QSocketNotifier
+from PySide2.QtWidgets import QApplication
 
 
 class BusinessLogic:
@@ -391,7 +395,22 @@ i3 = i3ipc.Connection(auto_reconnect = True)
 tk_root = tkinter.Tk()
 gui = HighGUI()
 logic = BusinessLogic()
-if __name__ == '__main__':
+
+def check_i3_events():
+    i3.main(0)
+
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    logic.listen_for_bindings() #start hidden
-    tk_root.mainloop()
+
+    app = QApplication()
+    path_raw = subprocess.check_output(['i3', '--get-socketpath'])
+    path = path_raw.decode().strip()
+    ipc = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    ipc.connect(path)
+    socket_file_descriptor = ipc.fileno()
+    ipc.close()
+    notifier = QSocketNotifier(socket_file_descriptor, QSocketNotifier.Write)
+    print(notifier.type(), notifier.socket(), notifier.isEnabled())
+    notifier.activated.connect(check_i3_events)
+    sys.exit(app.exec_())
+
