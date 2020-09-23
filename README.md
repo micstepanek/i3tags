@@ -7,11 +7,11 @@ Resolvable issues:
 - hard-code
 - long functions
 - documentation
-- Tcl cannot do characters above U+FFFF
 
 Tough issues:
 - switching between tags that use the same window causes
 undesired content to appear for a fraction of second. Cannot be
 eliminated by this app, it is rooted in how i3 works.
 Either background, resize or other irrelevant content is always
-visible for a fraction of second
+visible for a fraction of second.
+- Qt showing rectangle instead of high unicode character
