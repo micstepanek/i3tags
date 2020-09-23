@@ -3,7 +3,7 @@
 """Emulate tags to i3wm. Run as service.
 
 Call in following directions
- i3 <-> logic=BusinessLogic <-> gui=HighGUI -> tkinter
+ i3 <-> logic <-> gui -> Qt
 with no jumps, e.g. logic may call gui,
 but i3 shouldn't call gui directly."""
 
@@ -12,14 +12,138 @@ import i3ipc
 import logging
 import multipledispatch
 import subprocess
-import socket
-import sys
-import tkinter
+import threading
 import time
-import unicodedata
-from PySide2.QtCore import QSocketNotifier
-from PySide2.QtWidgets import QApplication
+from PySide2.QtCore import QObject, Signal, Slot
+from PySide2.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QApplication, QFrame
 
+
+class Interface():
+
+    def __init__(self):
+        self.app = QApplication()
+        self.signals = Signals()
+        self.signals.activate.connect(self._activate)
+        self.signals.hide.connect(self._hide)
+        self.signals.show_mode.connect(self._show_mode)
+        self.signals.show_tag_entry.connect(self._show_tag_entry)
+
+    def _set_position(self, tag_tree):
+        windows = tag_tree.leaves()
+        for window in windows:
+            if window.focused:
+                self.window.move(window.rect.x, window.rect.y + 75)
+                break
+
+    def activate(self, tag_tree):
+        self.signals.activate.emit(tag_tree)
+
+    def hide(self, _):
+        self.signals.hide.emit()
+
+    def show_mode(self, binding_event):
+        self.signals.show_mode.emit(binding_event)
+
+    def show_tag_entry(self):
+        self.signals.show_tag_entry.emit()
+
+    @Slot()
+    def _show_tag_entry(self):
+        self.entry = QLineEdit()
+        self.entry.returnPressed.connect(self.process_tag_entry)
+        self.window.layout_.addWidget(self.entry)
+        self.entry.setFocus()
+
+    @Slot()
+    def process_tag_entry(self):
+        logic.process_tag_entry(self.entry.text())
+
+
+    @Slot()
+    def _hide(self):
+        self.window.destroy()
+
+    @Slot()
+    def _activate(self, tag_tree):
+        self.window = MainWindow(tag_tree)
+        self._prepare_tags(tag_tree)
+        self._set_position(tag_tree)
+        self.window.show()
+
+    def _prepare_tags(self, tag_tree):
+        for tag in tag_tree.tags():
+            if tag.name == 'hidden':
+                continue
+            windows = tag.nodes
+            if not windows:
+                try:
+                    windows = tag.floating_nodes[0].nodes
+                except IndexError: # no widows at all, label tag name
+                    self.add_label(f'''{tag.name} 
+''')
+            for window in windows:
+                self.label_i3_window(tag, window)
+
+
+    def label_i3_window(self, tag, window):
+        style = 'raised'
+        if window.focused:
+            style = 'sunken'
+        elif window.urgent:
+            style = None
+        self.add_label(f'''{tag.name}           {window.window_class}
+{window.name}''', style)
+
+    def add_label(self, text, style='sunken'):
+        label = QLabel(text, self.window)
+        if style == 'sunken':
+            label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        elif style == 'raised':
+            label.setFrameStyle(QFrame.Panel | QFrame.Raised)
+        else:
+            pass
+        label.setLineWidth(2)
+        self.window.layout_.addWidget(label)
+
+    @Slot()
+    def catch_object(object):
+        # print('tag added')
+        print(object.command.command)
+
+    @Slot()
+    def _show_mode(self, binding_event):
+        self.window.clear()
+        self.add_mode(binding_event)
+
+    def add_mode(self, binding_event):
+        behind_mode = binding_event.binding.command.split('mode ', 1)[-1]
+        mode_hints = behind_mode.split(';', 1)[0].split('|')
+        for hint in mode_hints:
+            self.add_label(hint)
+
+class Signals(QObject):
+    activate = Signal(object)
+    hide = Signal()
+    show_mode = Signal(object)
+    show_tag_entry = Signal()
+
+
+class MainWindow(QDialog):
+    def __init__(self, tag_tree, parent=None):
+        super(MainWindow, self).__init__(parent)
+        time_ = time.asctime(time.localtime())
+        self.setWindowTitle(time_)
+        self.layout_ = QVBoxLayout()
+        self.setLayout(self.layout_)
+
+    def clear(self):
+        for i in reversed(range(self.layout_.count())):
+            self.layout_.takeAt(i).widget().deleteLater()
+
+
+class Frame(QFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
 
 class BusinessLogic:
     """Central class.
@@ -27,7 +151,6 @@ class BusinessLogic:
     Don't call tk_root from here, call gui instead."""
 
     def __init__(self):
-        i3.on(i3ipc.Event.BINDING, self.handle_binding)
         # i3 handles modes properly, including sequences,
         # overlapping sequences and multiple keys at once,
         # as well as japanese keys
@@ -36,16 +159,21 @@ class BusinessLogic:
         self.previous_tag_name = self._tag_tree.find_focused().tag().name
         self.nop_mapping = {
             'activate': self.activate,
-            'reset': gui.reset,
+            'reset': gui.hide,
             'mode': gui.show_mode,
             'switch': self.switch_tag,
             'retag': self.show_retag_entry,
-            'add': gui.add_mode,
+            #'add': gui.add_mode,
             'branch': self.branch_tag,
             'title': self.show_retitle_entry
             # add to your i3 config like this:
             # bindsym Escape mode default; nop reset
         }
+
+    def i3_loop(self):
+        i3.on(i3ipc.Event.BINDING, self.handle_binding)
+        i3.main()
+
     @property
     def tags(self):
         return self._tag_tree.nodes[1].nodes[1].nodes
@@ -63,23 +191,17 @@ class BusinessLogic:
             for comment in nop_list:
                 self.nop_mapping[comment](binding_event)
 
-    def listen_for_bindings(self):
-        i3.main()
-
-    def stop_listening(self):
-        i3.main_quit()
-
     def activate(self, _):
         i3.command('fullscreen disable')
         self._update_tag_tree()
         gui.activate(self._tag_tree)
 
     def show_retitle_entry(self, _):
-        self.prepare_for_entry()
+        i3.command('mode default')
         gui.show_retitle_entry()
 
     def show_retag_entry(self, _):
-        self.prepare_for_entry()
+        i3.command('mode default')
         gui.show_tag_entry()
 
     def branch_tag(self, binding_event):
@@ -89,10 +211,6 @@ class BusinessLogic:
         new_tag.name = tag_name
         self.tags.append(new_tag)
         i3.command(f'move window to workspace {tag_name}')
-
-    def prepare_for_entry(self):
-        self.stop_listening()
-        i3.command('mode default')
 
     def find_target_name(self, key):
         current_tag_name = self._tag_tree.find_focused().workspace().name
@@ -109,7 +227,7 @@ class BusinessLogic:
 
     @multipledispatch.dispatch(str)
     def switch_tag(self, symbol):
-        gui.reset()
+        gui.window.destroy()
         target_name = self.find_target_name(symbol)
         target_workspace = self._workspace_tree.find_tag_by_name(target_name)
         target_tag = self._tag_tree.find_tag_by_name(target_name)
@@ -140,8 +258,8 @@ class BusinessLogic:
         self.tags.sort(key=lambda x: x.name)
 
     def process_tag_entry(self, entry):
+        gui.window.destroy()
         if entry == 'quit':
-            gui.quit()
             exit()
         # get variables
         current_tag = self._tag_tree.find_focused().workspace()
@@ -150,7 +268,7 @@ class BusinessLogic:
         self._tag_tree.remove_node_by_id(current_window.id)
         #
         if entry == '':
-            i3.command('kill') #kill focused window
+            i3.command(f'[con_id={current_window.id}] kill')
         else:
             change_workspace_after_retagging = False
             for char in entry:
@@ -166,9 +284,9 @@ class BusinessLogic:
                     self.tags.append(new_tag)
             if change_workspace_after_retagging == True:
                 self.switch_tag(entry[0])
-            elif current_tag.name not in entry:
-                i3.command('move window to workspace {}'.format(entry[0]))
-        self.listen_for_bindings()
+            if current_tag.name not in entry:
+                i3.command(
+                    f'[con_id={current_window.id}] move window to workspace {entry[0]}')
 
     def _add_to_existing_tag(self, char, current_window):
         for tag in self.tags:
@@ -222,130 +340,15 @@ class HighGUI:
     Commnads are implemented in tkinter. Call only logic, tk_root and
     tkinter."""
 
-    _FOCUS_COLOR = '#cfc'
-    _URGENT_COLOR = 'yellow'
-    _COLOR_0 = 'white'
-    _COLOR_1 = '#fafafa'
-    _TAG_PADDING = 40
-
-    def __init__(self):
-        tk_root.attributes('-type', 'dialog')
-        self.frame = tkinter.Frame(tk_root)
-        self.frame.pack()
-        self.color_generator = self.color_generator_function()
-        self.update = tk_root.update
-
-    def activate(self, tag_tree):
-        self._prepare_tags(tag_tree)
-        self._set_position(tag_tree)
-        self._set_time()
-        tk_root.update() # fixes position
-        tk_root.deiconify()
-        tk_root.update() # fixes content
-
-    def _prepare_tags(self, tag_tree):
-        for tag in tag_tree.tags():
-            if tag.name == 'hidden':
-                continue
-            windows = tag.nodes
-            if not windows:
-                try:
-                    windows = tag.floating_nodes[0].nodes
-                except IndexError: # no widows at all, label tag name
-                    self.add_label(tag.name,
-                                   self._FOCUS_COLOR,
-                                   self._TAG_PADDING)
-            for window in windows:
-                self.label_i3_window(tag, window)
-
-    def label_i3_window(self, tag, window):
-        if window.focused:
-            color = self._FOCUS_COLOR
-        elif window.urgent:
-            color = self._URGENT_COLOR
-        else:
-            color = next(self.color_generator)
-        self.add_label(f'{tag.name}           {window.window_class}',
-                       color,
-                       self._TAG_PADDING)
-        self.add_label(window.name, color)
-
-    def add_label(self, text, background_color=None, left_padding=None):
-        deunicoded = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore')
-        label = tkinter.Label(self.frame, #parent
-                              anchor = 'w', #left
-                              text = deunicoded,
-                              padx = left_padding,
-                              bg = background_color)
-        label.pack(expand=True, fill='x')
-
-    def color_generator_function(self):
-        while True:
-            yield self._COLOR_0
-            yield self._COLOR_1
-
-    def _set_position(self, tag_tree):
-        windows = tag_tree.leaves()
-        for window in windows:
-            if window.focused:
-                tk_root.geometry(f'+{window.rect.x}+{window.rect.y + 75}')
-                break
-
-    def _set_time(self):
-        tk_root.title(time.asctime(time.localtime()))
-
-    def show_entry(self, on_return_key):
-        self.entry = tkinter.Entry(self.frame)
-        self.entry.focus()
-        self.entry.bind('<Escape>', self._escape_from_entry)
-        self.entry.bind('<Return>', on_return_key)
-        self.entry.pack()
 
     def show_retitle_entry(self):
         self.show_entry(self._handle_retitle_entry)
-
-    def show_tag_entry(self):
-        self.show_entry(self._handle_tag_entry)
 
     def _handle_retitle_entry(self, _):
         entry = self.entry.get()
         self.reset()
         logic.retitle_focused_window(entry)
-        logic.listen_for_bindings()
 
-    def _handle_tag_entry(self, _):
-        entry = self.entry.get()
-        self.reset()
-        logic.process_tag_entry(entry)
-
-    def _escape_from_entry(self, _=None):
-        self.reset()
-        logic.listen_for_bindings()
-
-    def reset(self, _=None):
-        self.clear()
-        tk_root.update()
-        tk_root.withdraw()
-
-    def clear(self):
-        self.frame.destroy()
-        self.frame = tkinter.Frame(tk_root)
-        self.frame.pack()
-
-    def show_mode(self, binding_event):
-        self.clear()
-        self.add_mode(binding_event)
-
-    def add_mode(self, binding_event):
-        behind_mode = binding_event.binding.command.split('mode ', 1)[-1]
-        mode_hints = behind_mode.split(';', 1)[0].split('|')
-        for hint in mode_hints:
-            self.add_label(hint)
-        tk_root.update()
-
-    def quit(self):
-        """Use to avoid calling tk_root from logic."""
-        tk_root.destroy()
 
 
 class I3ipcConMonkeyPatch():
@@ -390,27 +393,12 @@ class I3ipcConMonkeyPatch():
     Con.remove_node_by_id = remove_node_by_id
     Con.find_tag_by_name = find_tag_by_name
 
-
-i3 = i3ipc.Connection(auto_reconnect = True)
-tk_root = tkinter.Tk()
-gui = HighGUI()
-logic = BusinessLogic()
-
-def check_i3_events():
-    i3.main(0)
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-
-    app = QApplication()
-    path_raw = subprocess.check_output(['i3', '--get-socketpath'])
-    path = path_raw.decode().strip()
-    ipc = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    ipc.connect(path)
-    socket_file_descriptor = ipc.fileno()
-    ipc.close()
-    notifier = QSocketNotifier(socket_file_descriptor, QSocketNotifier.Write)
-    print(notifier.type(), notifier.socket(), notifier.isEnabled())
-    notifier.activated.connect(check_i3_events)
-    sys.exit(app.exec_())
+    i3 = i3ipc.Connection(auto_reconnect=True)
+    gui = Interface()
+    logic = BusinessLogic()
+    i3_thread= threading.Thread(target=logic.i3_loop)
+    i3_thread.start()
+    gui.app.exec_()
 
