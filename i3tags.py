@@ -25,14 +25,14 @@ class GUI:
 
     @Slot()
     def show_retag_entry(self):
-        self.entry = QLineEdit()
-        self.entry.returnPressed.connect(self.process_retag_entry)
-        self.window.layout_.addWidget(self.entry)
-        self.entry.setFocus()
+        self.window.entry = QLineEdit()
+        self.window.entry.returnPressed.connect(self.process_retag_entry)
+        self.window.layout_.addWidget(self.window.entry)
+        self.window.entry.setFocus()
 
     @Slot()
     def process_retag_entry(self):
-        entry = self.entry.text()
+        entry = self.window.entry.text()
         self.window.destroy()
         logic.process_retag_entry(entry)
 
