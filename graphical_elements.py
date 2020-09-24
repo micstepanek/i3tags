@@ -11,6 +11,9 @@ class MainWindow(QDialog):
         self.layout_ = QVBoxLayout()
         self.setLayout(self.layout_)
 
+    def reject(self):
+        self.destroy()
+
     def clear(self):
         for i in reversed(range(self.layout_.count())):
             self.layout_.takeAt(i).widget().deleteLater()
