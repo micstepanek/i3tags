@@ -22,24 +22,18 @@ import i3ipc_patch
 
 class GUI:
 
-    def _set_position(self, tag_tree):
-        windows = tag_tree.leaves()
-        for window in windows:
-            if window.focused:
-                self.window.move(window.rect.x, window.rect.y + 75)
-                break
-
     @Slot()
     def show_retag_entry(self):
         self.entry = QLineEdit()
-        self.entry.returnPressed.connect(self.process_tag_entry)
+        self.entry.returnPressed.connect(self.process_retag_entry)
         self.window.layout_.addWidget(self.entry)
         self.entry.setFocus()
 
     @Slot()
-    def process_tag_entry(self):
-        logic.process_tag_entry(self.entry.text())
-
+    def process_retag_entry(self):
+        entry = self.entry.text()
+        self.window.destroy()
+        logic.process_retag_entry(entry)
 
     @Slot()
     def destroy_window(self):
@@ -49,7 +43,7 @@ class GUI:
     def activate(self, tag_tree):
         self.window = MainWindow(tag_tree)
         self._prepare_tags(tag_tree)
-        self._set_position(tag_tree)
+        self.window.move_above_focused_window(tag_tree)
         self.window.show()
 
     def _prepare_tags(self, tag_tree):
@@ -101,14 +95,14 @@ class Signals(QObject):
     activate = Signal(object)
     destroy_window = Signal()
     show_mode = Signal(object)
-    show_tag_entry = Signal()
+    show_retag_entry = Signal()
 
 class Connections:
     def __init__(self):
         signals.activate.connect(gui.activate)
         signals.destroy_window.connect(gui.destroy_window)
         signals.show_mode.connect(gui._show_mode)
-        signals.show_tag_entry.connect(gui.show_retag_entry)
+        signals.show_retag_entry.connect(gui.show_retag_entry)
 
 
 class BusinessLogic:
@@ -168,7 +162,7 @@ class BusinessLogic:
 
     def show_retag_entry(self):
         i3.command('mode default')
-        signals.show_tag_entry.emit()
+        signals.show_retag_entry.emit()
 
     def branch_tag(self, binding_event):
         tag_name = binding_event.binding.symbol
@@ -223,8 +217,7 @@ class BusinessLogic:
         self._inspect_windows()
         self.tags.sort(key=lambda x: x.name)
 
-    def process_tag_entry(self, entry):
-        gui.window.destroy()
+    def process_retag_entry(self, entry):
         if entry == 'quit':
             app.exit()
         # get variables
