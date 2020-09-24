@@ -19,14 +19,9 @@ from PySide2.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QApplicat
 #modules
 import i3ipc_patch
 
-class Interface():
 
-    def __init__(self):
-        self.signals = Signals()
-        self.signals.activate.connect(self._activate)
-        self.signals.hide.connect(self._hide)
-        self.signals.show_mode.connect(self._show_mode)
-        self.signals.show_tag_entry.connect(self._show_tag_entry)
+class GUI():
+
 
     def _set_position(self, tag_tree):
         windows = tag_tree.leaves()
@@ -35,20 +30,15 @@ class Interface():
                 self.window.move(window.rect.x, window.rect.y + 75)
                 break
 
-    def activate(self, tag_tree):
-        self.signals.activate.emit(tag_tree)
 
     def hide(self, _):
-        self.signals.hide.emit()
+        signals.hide.emit()
 
     def show_mode(self, binding_event):
-        self.signals.show_mode.emit(binding_event)
-
-    def show_tag_entry(self):
-        self.signals.show_tag_entry.emit()
+        signals.show_mode.emit(binding_event)
 
     @Slot()
-    def _show_tag_entry(self):
+    def show_retag_entry(self):
         self.entry = QLineEdit()
         self.entry.returnPressed.connect(self.process_tag_entry)
         self.window.layout_.addWidget(self.entry)
@@ -64,7 +54,7 @@ class Interface():
         self.window.destroy()
 
     @Slot()
-    def _activate(self, tag_tree):
+    def activate(self, tag_tree):
         self.window = MainWindow(tag_tree)
         self._prepare_tags(tag_tree)
         self._set_position(tag_tree)
@@ -127,6 +117,13 @@ class Signals(QObject):
     show_mode = Signal(object)
     show_tag_entry = Signal()
 
+class Connections:
+    def __init__(self):
+        signals.activate.connect(gui.activate)
+        signals.hide.connect(gui._hide)
+        signals.show_mode.connect(gui._show_mode)
+        signals.show_tag_entry.connect(gui.show_retag_entry)
+
 
 class MainWindow(QDialog):
     def __init__(self, tag_tree, parent=None):
@@ -183,18 +180,18 @@ class BusinessLogic:
         self._tag_tree.nodes[1].nodes[1].nodes = list_
 
     def handle_binding(self, _, binding_event):
-        command = binding_event.binding.command
-        if 'nop' in command:
+        i3_command = binding_event.binding.command
+        if 'nop' in i3_command:
             behind_nop = binding_event.binding.command.split('nop ', 1)[1]
             nop_list = behind_nop.split(';', 1)[0].split()
             logging.debug(nop_list)
-            for comment in nop_list:
-                self.nop_mapping[comment](binding_event)
+            for inner_command in nop_list:
+                self.nop_mapping[inner_command](binding_event)
 
     def activate(self, _):
         i3.command('fullscreen disable')
         self._update_tag_tree()
-        gui.activate(self._tag_tree)
+        signals.activate.emit(self._tag_tree)
 
     def show_retitle_entry(self, _):
         i3.command('mode default')
@@ -202,7 +199,7 @@ class BusinessLogic:
 
     def show_retag_entry(self, _):
         i3.command('mode default')
-        gui.show_tag_entry()
+        signals.show_tag_entry.emit()
 
     def branch_tag(self, binding_event):
         tag_name = binding_event.binding.symbol
@@ -352,11 +349,13 @@ class HighGUI:
 
 if __name__ == "__main__":
     app = QApplication()
+    gui = GUI()
+    signals = Signals()
+    connections = Connections()
     logging.basicConfig(level=logging.DEBUG)
     i3 = i3ipc.Connection(auto_reconnect=True)
-    gui = Interface()
     logic = BusinessLogic()
-    i3_thread= threading.Thread(target=logic.i3_loop)
+    i3_thread = threading.Thread(target=logic.i3_loop)
     i3_thread.start()
     app.exec_()
     # this will run after app.exit()
