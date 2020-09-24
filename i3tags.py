@@ -331,22 +331,6 @@ class BusinessLogic:
                 self._tag_tree.find_by_id(workspace_id).nodes.append(window)
 
 
-class HighGUI:
-    """High-level domain specific graphical user interface commands.
-
-    Commnads are implemented in tkinter. Call only logic, tk_root and
-    tkinter."""
-
-
-    def show_retitle_entry(self):
-        self.show_entry(self._handle_retitle_entry)
-
-    def _handle_retitle_entry(self, _):
-        entry = self.entry.get()
-        self.reset()
-        logic.retitle_focused_window(entry)
-
-
 if __name__ == "__main__":
     app = QApplication()
     gui = GUI()
