@@ -14,3 +14,10 @@ class MainWindow(QDialog):
     def clear(self):
         for i in reversed(range(self.layout_.count())):
             self.layout_.takeAt(i).widget().deleteLater()
+
+    def move_above_focused_window(self, tag_tree):
+        windows = tag_tree.leaves()
+        for window in windows:
+            if window.focused:
+                self.move(window.rect.x, window.rect.y + 75)
+                break
