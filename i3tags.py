@@ -20,8 +20,7 @@ from PySide2.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QApplicat
 import i3ipc_patch
 
 
-class GUI():
-
+class GUI:
 
     def _set_position(self, tag_tree):
         windows = tag_tree.leaves()
@@ -29,13 +28,6 @@ class GUI():
             if window.focused:
                 self.window.move(window.rect.x, window.rect.y + 75)
                 break
-
-
-    def hide(self, _):
-        signals.hide.emit()
-
-    def show_mode(self, binding_event):
-        signals.show_mode.emit(binding_event)
 
     @Slot()
     def show_retag_entry(self):
@@ -50,7 +42,7 @@ class GUI():
 
 
     @Slot()
-    def _hide(self):
+    def hide(self):
         self.window.destroy()
 
     @Slot()
@@ -73,7 +65,6 @@ class GUI():
 ''')
             for window in windows:
                 self.label_i3_window(tag, window)
-
 
     def label_i3_window(self, tag, window):
         style = 'raised'
@@ -120,7 +111,7 @@ class Signals(QObject):
 class Connections:
     def __init__(self):
         signals.activate.connect(gui.activate)
-        signals.hide.connect(gui._hide)
+        signals.hide.connect(gui.hide)
         signals.show_mode.connect(gui._show_mode)
         signals.show_tag_entry.connect(gui.show_retag_entry)
 
@@ -154,18 +145,6 @@ class BusinessLogic:
         self._tag_tree = i3.get_tree()
         self._workspace_tree = i3.get_tree()
         self.previous_tag_name = self._tag_tree.find_focused().tag().name
-        self.nop_mapping = {
-            'activate': self.activate,
-            'reset': gui.hide,
-            'mode': gui.show_mode,
-            'switch': self.switch_tag,
-            'retag': self.show_retag_entry,
-            #'add': gui.add_mode,
-            'branch': self.branch_tag,
-            'title': self.show_retitle_entry
-            # add to your i3 config like this:
-            # bindsym Escape mode default; nop reset
-        }
 
     def i3_loop(self):
         i3.on(i3ipc.Event.BINDING, self.handle_binding)
@@ -179,25 +158,37 @@ class BusinessLogic:
     def tags(self, list_):
         self._tag_tree.nodes[1].nodes[1].nodes = list_
 
+    def extract_i3tags_commands(self, i3_command):
+        behind_nop = i3_command.split('nop ', 1)[1]
+        return behind_nop.split(';', 1)[0].split()
+
     def handle_binding(self, _, binding_event):
         i3_command = binding_event.binding.command
         if 'nop' in i3_command:
-            behind_nop = binding_event.binding.command.split('nop ', 1)[1]
-            nop_list = behind_nop.split(';', 1)[0].split()
-            logging.debug(nop_list)
-            for inner_command in nop_list:
-                self.nop_mapping[inner_command](binding_event)
+            i3tags_commands = self.extract_i3tags_commands(i3_command)
+            logging.debug(i3tags_commands)
+            for x in i3tags_commands:
+                if x == 'reset'   : signals.hide.emit()
+                if x == 'activate': self.activate()
+                if x == 'mode'    : signals.show_mode.emit(binding_event)
+                if x == 'switch'  : self.switch_tag(binding_event)
+                if x == 'retag'   : self.show_retag_entry()
+                if x == 'add'     : signals.add_mode.emit(binding_event)
+                if x == 'branch'  : self.branch_tag(binding_event)
+                if x == 'title'   : self.show_retitle_entry()
+            # add to your i3 config like this:
+            # bindsym Escape mode default; nop reset
 
-    def activate(self, _):
+    def activate(self):
         i3.command('fullscreen disable')
         self._update_tag_tree()
         signals.activate.emit(self._tag_tree)
 
-    def show_retitle_entry(self, _):
+    def show_retitle_entry(self):
         i3.command('mode default')
         gui.show_retitle_entry()
 
-    def show_retag_entry(self, _):
+    def show_retag_entry(self):
         i3.command('mode default')
         signals.show_tag_entry.emit()
 
