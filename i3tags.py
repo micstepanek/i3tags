@@ -21,7 +21,6 @@ from PySide2.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QApplicat
 class Interface():
 
     def __init__(self):
-        self.app = QApplication()
         self.signals = Signals()
         self.signals.activate.connect(self._activate)
         self.signals.hide.connect(self._hide)
@@ -260,7 +259,7 @@ class BusinessLogic:
     def process_tag_entry(self, entry):
         gui.window.destroy()
         if entry == 'quit':
-            exit()
+            app.exit()
         # get variables
         current_tag = self._tag_tree.find_focused().workspace()
         current_window = self._tag_tree.find_focused()
@@ -394,11 +393,13 @@ class I3ipcConMonkeyPatch():
     Con.find_tag_by_name = find_tag_by_name
 
 if __name__ == "__main__":
+    app = QApplication()
     logging.basicConfig(level=logging.DEBUG)
     i3 = i3ipc.Connection(auto_reconnect=True)
     gui = Interface()
     logic = BusinessLogic()
     i3_thread= threading.Thread(target=logic.i3_loop)
     i3_thread.start()
-    gui.app.exec_()
-
+    app.exec_()
+    # this will run after app.exit()
+    i3.main_quit()
