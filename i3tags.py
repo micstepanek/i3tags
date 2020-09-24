@@ -87,11 +87,6 @@ class GUI:
         self.window.layout_.addWidget(label)
 
     @Slot()
-    def catch_object(object):
-        # print('tag added')
-        print(object.command.command)
-
-    @Slot()
     def _show_mode(self, binding_event):
         self.window.clear()
         self.add_mode(binding_event)
