@@ -13,10 +13,10 @@ import logging
 import multipledispatch
 import subprocess
 import threading
-import time
 from PySide2.QtCore import QObject, Signal, Slot
-from PySide2.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QApplication, QFrame
-#modules
+from PySide2.QtWidgets import QLabel, QLineEdit, QApplication, QFrame
+# modules
+from graphical_elements import MainWindow
 import i3ipc_patch
 
 
@@ -114,19 +114,6 @@ class Connections:
         signals.destroy_window.connect(gui.destroy_window)
         signals.show_mode.connect(gui._show_mode)
         signals.show_tag_entry.connect(gui.show_retag_entry)
-
-
-class MainWindow(QDialog):
-    def __init__(self, tag_tree, parent=None):
-        super(MainWindow, self).__init__(parent)
-        time_ = time.asctime(time.localtime())
-        self.setWindowTitle(time_)
-        self.layout_ = QVBoxLayout()
-        self.setLayout(self.layout_)
-
-    def clear(self):
-        for i in reversed(range(self.layout_.count())):
-            self.layout_.takeAt(i).widget().deleteLater()
 
 
 class BusinessLogic:
@@ -323,7 +310,6 @@ i3ipc_patch.apply()
 logic = BusinessLogic()
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    i3 = i3ipc.Connection(auto_reconnect=True)
     app = QApplication()
     gui = GUI()
     signals = Signals()
