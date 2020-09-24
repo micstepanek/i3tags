@@ -212,6 +212,8 @@ class BusinessLogic:
     def process_retag_entry(self, entry):
         if entry == 'quit':
             app.exit()
+            # app.exit is not immediate, we have to stop function too
+            return
         # get variables
         current_tag = self._tag_tree.find_focused().workspace()
         current_window = self._tag_tree.find_focused()
