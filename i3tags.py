@@ -42,7 +42,7 @@ class GUI:
 
 
     @Slot()
-    def hide(self):
+    def destroy_window(self):
         self.window.destroy()
 
     @Slot()
@@ -104,14 +104,14 @@ class GUI:
 
 class Signals(QObject):
     activate = Signal(object)
-    hide = Signal()
+    destroy_window = Signal()
     show_mode = Signal(object)
     show_tag_entry = Signal()
 
 class Connections:
     def __init__(self):
         signals.activate.connect(gui.activate)
-        signals.hide.connect(gui.hide)
+        signals.destroy_window.connect(gui.destroy_window)
         signals.show_mode.connect(gui._show_mode)
         signals.show_tag_entry.connect(gui.show_retag_entry)
 
@@ -167,17 +167,17 @@ class BusinessLogic:
         if 'nop' in i3_command:
             i3tags_commands = self.extract_i3tags_commands(i3_command)
             logging.debug(i3tags_commands)
-            for x in i3tags_commands:
-                if x == 'reset'   : signals.hide.emit()
-                if x == 'activate': self.activate()
-                if x == 'mode'    : signals.show_mode.emit(binding_event)
-                if x == 'switch'  : self.switch_tag(binding_event)
-                if x == 'retag'   : self.show_retag_entry()
-                if x == 'add'     : signals.add_mode.emit(binding_event)
-                if x == 'branch'  : self.branch_tag(binding_event)
-                if x == 'title'   : self.show_retitle_entry()
-            # add to your i3 config like this:
-            # bindsym Escape mode default; nop reset
+            for c in i3tags_commands:
+                if c == 'reset'   : signals.destroy_window.emit()
+                # add to your ~/.config/i3/config like this:
+                # bindsym Escape mode default; nop reset
+                if c == 'activate': self.activate()
+                if c == 'mode'    : signals.show_mode.emit(binding_event)
+                if c == 'switch'  : self.switch_tag(binding_event)
+                if c == 'retag'   : self.show_retag_entry()
+                if c == 'add'     : signals.add_mode.emit(binding_event)
+                if c == 'branch'  : self.branch_tag(binding_event)
+                if c == 'title'   : self.show_retitle_entry()
 
     def activate(self):
         i3.command('fullscreen disable')
