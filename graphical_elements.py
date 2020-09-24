@@ -22,5 +22,8 @@ class MainWindow(QDialog):
         windows = tag_tree.leaves()
         for window in windows:
             if window.focused:
-                self.move(window.rect.x, window.rect.y + 75)
+                try:
+                    self.move(window.rect.x, window.rect.y + 75)
+                except OverflowError:
+                    pass
                 break
