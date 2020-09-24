@@ -24,6 +24,13 @@ class GUI:
     window = None
 
     @Slot()
+    def activate(self, tag_tree):
+        self.window = MainWindow(tag_tree)
+        self._prepare_tags(tag_tree)
+        self.window.move_above_focused_window(tag_tree)
+        self.window.show()
+
+    @Slot()
     def show_retag_entry(self):
         self.window.entry = QLineEdit()
         self.window.entry.returnPressed.connect(self.process_retag_entry)
@@ -40,12 +47,6 @@ class GUI:
     def destroy_window(self):
         self.window.destroy()
 
-    @Slot()
-    def activate(self, tag_tree):
-        self.window = MainWindow(tag_tree)
-        self._prepare_tags(tag_tree)
-        self.window.move_above_focused_window(tag_tree)
-        self.window.show()
 
     def _prepare_tags(self, tag_tree):
         for tag in tag_tree.tags():
