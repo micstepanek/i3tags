@@ -154,13 +154,13 @@ class BusinessLogic:
                 if c == 'reset'   : signals.destroy_window.emit()
                 # add to your ~/.config/i3/config like this:
                 # bindsym Escape mode default; nop reset
-                if c == 'activate': self.activate()
-                if c == 'mode'    : signals.show_mode.emit(binding_event)
-                if c == 'switch'  : self.switch_tag(binding_event)
-                if c == 'retag'   : self.show_retag_entry()
-                if c == 'add'     : signals.add_mode.emit(binding_event)
-                if c == 'branch'  : self.branch_tag(binding_event)
-                if c == 'title'   : self.show_retitle_entry()
+                elif c == 'activate': self.activate()
+                elif c == 'mode'    : signals.show_mode.emit(binding_event)
+                elif c == 'switch'  : self.switch_tag(binding_event)
+                elif c == 'retag'   : self.show_retag_entry()
+                elif c == 'add'     : signals.add_mode.emit(binding_event)
+                elif c == 'branch'  : self.branch_tag(binding_event)
+                elif c == 'title'   : self.show_retitle_entry()
 
     def activate(self):
         i3.command('fullscreen disable')
