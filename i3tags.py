@@ -318,6 +318,9 @@ class BusinessLogic:
                 self._tag_tree.find_by_id(workspace_id).nodes.append(window)
 
 
+i3 = i3ipc.Connection(auto_reconnect=True)
+i3ipc_patch.apply()
+logic = BusinessLogic()
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     i3 = i3ipc.Connection(auto_reconnect=True)
@@ -325,7 +328,6 @@ if __name__ == "__main__":
     gui = GUI()
     signals = Signals()
     connections = Connections()
-    logic = BusinessLogic()
     i3_thread = threading.Thread(target=logic.i3_loop)
     i3_thread.start()
     app.exec_()
