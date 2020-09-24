@@ -21,6 +21,7 @@ import i3ipc_patch
 
 
 class GUI:
+    window = None
 
     @Slot()
     def show_retag_entry(self):
