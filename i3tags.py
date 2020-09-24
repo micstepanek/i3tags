@@ -129,10 +129,6 @@ class MainWindow(QDialog):
             self.layout_.takeAt(i).widget().deleteLater()
 
 
-class Frame(QFrame):
-    def __init__(self, parent):
-        super().__init__(parent)
-
 class BusinessLogic:
     """Central class.
 
@@ -323,12 +319,12 @@ class BusinessLogic:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    i3 = i3ipc.Connection(auto_reconnect=True)
     app = QApplication()
     gui = GUI()
     signals = Signals()
     connections = Connections()
-    logging.basicConfig(level=logging.DEBUG)
-    i3 = i3ipc.Connection(auto_reconnect=True)
     logic = BusinessLogic()
     i3_thread = threading.Thread(target=logic.i3_loop)
     i3_thread.start()
