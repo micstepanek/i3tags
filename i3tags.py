@@ -143,13 +143,13 @@ class BusinessLogic:
                 if c == 'reset'   : signals.destroy_window.emit()
                 # add to your ~/.config/i3/config like this:
                 # bindsym Escape mode eefault; nop reset
-                elif c == 'activate': self.activate()
-                elif c == 'mode'    : signals.show_mode.emit(binding_event)
-                elif c == 'switch'  : self.switch_tag(binding_event)
-                elif c == 'retag'   : signals.show_retag_entry.emit()
-                elif c == 'add'     : signals.add_mode.emit(binding_event)
-                elif c == 'branch'  : self.branch_tag(binding_event)
-                elif c == 'title'   : self.show_retitle_entry()
+                elif c == 'new'   : self.activate()
+                elif c == 'mode'  : signals.show_mode.emit(binding_event)
+                elif c == 'switch': self.switch_tag(binding_event)
+                elif c == 'retag' : signals.show_retag_entry.emit()
+                elif c == 'add'   : signals.add_mode.emit(binding_event)
+                elif c == 'branch': self.branch_tag(binding_event)
+                elif c == 'title' : self.show_retitle_entry()
 
     def activate(self):
         self._update_tag_tree()
