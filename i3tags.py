@@ -137,9 +137,9 @@ class BusinessLogic:
     def handle_binding(self, _, binding_event):
         i3_command = binding_event.binding.command
         if 'nop' in i3_command:
-            i3tags_commands = self.extract_i3tags_commands(i3_command)
-            logging.debug(i3tags_commands)
-            for c in i3tags_commands:
+            self_commands = self.extract_i3tags_commands(i3_command)
+            logging.debug(self_commands)
+            for c in self_commands:
                 if c == 'reset'   : signals.destroy_window.emit()
                 # add to your ~/.config/i3/config like this:
                 # bindsym Escape mode eefault; nop reset
