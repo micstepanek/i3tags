@@ -8,7 +8,14 @@ Resolvable issues:
 - long functions
 - documentation
 
-Tough issues:
+Coming soon
+- dissolve class GUI into graphical_elements.py and
+BusinessLogic
+- create command 'tags' 
+- create window if content requested
+- get rid of command 'new'
+
+Tough but minor issues:
 - switching between tags that use the same window causes
 undesired content to appear for a fraction of second. Cannot be
 eliminated by this app, it is rooted in how i3 works.
