@@ -1,6 +1,7 @@
 import time
 
-from PySide2.QtWidgets import QDialog, QVBoxLayout
+from PySide2.QtCore import Slot
+from PySide2.QtWidgets import QDialog, QVBoxLayout, QLineEdit
 
 
 class MainWindow(QDialog):
@@ -27,3 +28,9 @@ class MainWindow(QDialog):
                 except OverflowError:
                     pass
                 break
+
+    def show_entry(self, callback):
+        self.entry = QLineEdit()
+        self.entry.returnPressed.connect(callback)
+        self.layout_.addWidget(self.entry)
+        self.entry.setFocus()

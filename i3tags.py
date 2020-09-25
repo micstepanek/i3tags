@@ -14,7 +14,7 @@ import multipledispatch
 import subprocess
 import threading
 from PySide2.QtCore import QObject, Signal, Slot
-from PySide2.QtWidgets import QLabel, QLineEdit, QApplication, QFrame
+from PySide2.QtWidgets import QLabel, QApplication, QFrame
 # modules
 from graphical_elements import MainWindow
 import i3ipc_patch
@@ -32,10 +32,7 @@ class GUI:
 
     @Slot()
     def show_retag_entry(self):
-        self.window.entry = QLineEdit()
-        self.window.entry.returnPressed.connect(self.process_retag_entry)
-        self.window.layout_.addWidget(self.window.entry)
-        self.window.entry.setFocus()
+        self.window.show_entry(self.process_retag_entry)
 
     @Slot()
     def process_retag_entry(self):
