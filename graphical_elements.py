@@ -12,6 +12,7 @@ class MainWindow(QDialog):
         self.layout_ = QVBoxLayout()
         self.setLayout(self.layout_)
 
+    # override Escape key behavior
     def reject(self):
         self.destroy()
 
@@ -19,15 +20,12 @@ class MainWindow(QDialog):
         for i in reversed(range(self.layout_.count())):
             self.layout_.takeAt(i).widget().deleteLater()
 
-    def move_above_focused_window(self, tag_tree):
-        windows = tag_tree.leaves()
-        for window in windows:
-            if window.focused:
-                try:
-                    self.move(window.rect.x, window.rect.y + 75)
-                except OverflowError:
-                    pass
-                break
+    def move_above_focused_window(self, workspace_tree):
+        focused_window = workspace_tree.find_focused()
+        try:
+            self.move(focused_window.rect.x, focused_window.rect.y + 75)
+        except OverflowError:
+            pass
 
     def show_entry(self, callback):
         self.entry = QLineEdit()

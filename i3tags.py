@@ -141,7 +141,7 @@ class BusinessLogic:
             for c in self_commands:
                 if c == 'reset'   : signals.destroy_window.emit()
                 # add to your ~/.config/i3/config like this:
-                # bindsym Escape mode eefault; nop reset
+                # bindsym Escape mode default; nop reset
                 elif c == 'new'   : self.activate()
                 elif c == 'mode'  : signals.show_mode.emit(binding_event)
                 elif c == 'switch': self.switch_tag(binding_event)
