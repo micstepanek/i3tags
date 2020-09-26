@@ -90,6 +90,11 @@ class Connections:
 
 
 class I3Input:
+    """
+    i3 handles keystrokes properly, including sequences,
+    overlapping sequences, multiple keys at once,
+    japanese keys and ISO_Level keys
+    """
     def i3_loop(self):
         i3.on(i3ipc.Event.BINDING, self.handle_binding)
         i3.main()
