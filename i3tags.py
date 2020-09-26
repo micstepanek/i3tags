@@ -262,10 +262,10 @@ class DataStructures:
                 self.tags.append(workspace)
 
     def _inspect_windows(self):
-        tagged_window_IDs = [window.id for window in self._tag_tree.leaves()]
+        tagged_window_ids = [window.id for window in self.tag_tree.leaves()]
         for window in self._workspace_tree.leaves():
-            if window.id not in tagged_window_IDs:
-                #copy window frow workspace to tag
+            if window.id not in tagged_window_ids:
+                # copy window from workspace to tag
                 workspace_id = (self._workspace_tree
                                 .find_by_id(window.id)
                                 .workspace().id)
