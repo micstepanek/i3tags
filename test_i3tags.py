@@ -11,9 +11,9 @@ class TestI3ipcConMonkeyPatch:
         windows = i3.get_tree().leaves()
         for window in windows:
             window.remove_focus()
-            assert window.focused == False
+            assert window.focused is False
 
     def test_remove_focus_on_tags(self):
         for tag in data.tags:
             tag.remove_focus()
-            assert tag.focused == False
+            assert tag.focused is False
