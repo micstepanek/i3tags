@@ -13,23 +13,17 @@ import threading
 from PySide2.QtCore import QObject, Signal, Slot
 from PySide2.QtWidgets import QApplication
 # modules
-from graphical_elements import MainWindow
+import graphical_elements
 import i3ipc_patch
 
 
 class GUIControl:
     def __init__(self):
-        self.window = MainWindow()
+        self.window = graphical_elements.MainWindow()
 
     @Slot()
     def add_retag_entry(self):
-        self.window.show_entry(self.process_retag_entry)
-
-    @Slot()
-    def process_retag_entry(self):
-        entry = self.window.entry.text()
-        self.window.reset()
-        logic.process_retag_entry(entry)
+        self.window.show_entry(data.process_retag_entry)
 
     @Slot()
     def reset(self):
@@ -77,11 +71,13 @@ class GUIControl:
                               window.focused,
                               not window.urgent)
 
+
 class Signals(QObject):
     show_tags = Signal(object)
     reset = Signal()
     show_mode = Signal(object)
     add_retag_entry = Signal()
+
 
 class Connections:
     def __init__(self):

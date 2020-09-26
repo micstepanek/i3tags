@@ -29,8 +29,13 @@ class MainWindow(QDialog):
             pass
 
     def show_entry(self, callback):
+        def on_return():
+            entry = self.entry.text()
+            self.reset()
+            callback(entry)
+
         self.entry = QLineEdit()
-        self.entry.returnPressed.connect(callback)
+        self.entry.returnPressed.connect(on_return)
         self.layout_.addWidget(self.entry)
         self.entry.setFocus()
 
