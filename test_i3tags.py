@@ -1,4 +1,4 @@
-#pytest
+# pytest
 from i3tags import *
 
 
