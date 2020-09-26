@@ -3,7 +3,7 @@ from i3tags import *
 
 
 def test_tags():
-    assert logic.tags is logic._tag_tree.nodes[1].nodes[1].nodes
+    assert data.tags is data.tag_tree.nodes[1].nodes[1].nodes
 
 
 class TestI3ipcConMonkeyPatch:
@@ -14,6 +14,6 @@ class TestI3ipcConMonkeyPatch:
             assert window.focused == False
 
     def test_remove_focus_on_tags(self):
-        for tag in logic.tags:
+        for tag in data.tags:
             tag.remove_focus()
             assert tag.focused == False
