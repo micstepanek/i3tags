@@ -1,7 +1,13 @@
 # i3tags
-Experimenting with i3ipc, dwm-like tags, i3/window/context keyboard menu, status bar replacement and autocomplete menu.
+adds keyboard-driven context menu with tagging options
+to your i3. As a side effect it can also replace i3bar.
+Coded with Python3, i3ipc and Qt5.
 
-Please see 'dev' branch for more recent development.
+It is configured by adding keywords to your /i3/config. E.g.
+
+    nop retag 
+
+will show entry to set new tags for focused window.
 
 Resolvable issues:
 - hard-code
@@ -11,8 +17,8 @@ Resolvable issues:
 Coming soon
 - dissolve class GUI into graphical_elements.py and
 BusinessLogic
-- create command 'tags' 
 - create window if content requested
+- create command 'tags' 
 - get rid of command 'new'
 
 Tough but minor issues:
