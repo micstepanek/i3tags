@@ -11,15 +11,13 @@ will show entry to set new tags for focused window.
 
 Resolvable issues:
 - hard-code
-- long functions
 - documentation
+- long functions
+- back_and_forth must be disabled, i3 tags is doing back and
+forth for tag switching
 
 Coming soon
-- dissolve class GUI into graphical_elements.py and
-BusinessLogic
 - create window if content requested
-- create command 'tags' 
-- get rid of command 'new'
 
 Tough but minor issues:
 - switching between tags that use the same window causes

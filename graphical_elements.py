@@ -1,11 +1,10 @@
 import time
-
-from PySide2.QtCore import Slot
-from PySide2.QtWidgets import QDialog, QVBoxLayout, QLineEdit
+from PySide2.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QFrame,\
+    QLabel
 
 
 class MainWindow(QDialog):
-    def __init__(self, tag_tree, parent=None):
+    def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
         time_ = time.asctime(time.localtime())
         self.setWindowTitle(time_)
@@ -20,10 +19,9 @@ class MainWindow(QDialog):
         for i in reversed(range(self.layout_.count())):
             self.layout_.takeAt(i).widget().deleteLater()
 
-    def move_above_focused_window(self, workspace_tree):
-        focused_window = workspace_tree.find_focused()
+    def move_(self, x, y):
         try:
-            self.move(focused_window.rect.x, focused_window.rect.y + 75)
+            self.move(x, y)
         except OverflowError:
             pass
 
@@ -32,3 +30,12 @@ class MainWindow(QDialog):
         self.entry.returnPressed.connect(callback)
         self.layout_.addWidget(self.entry)
         self.entry.setFocus()
+
+    def add_label(self, text, sunken=False, raised=False):
+        label = QLabel(text, self)
+        if sunken:
+            label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        elif raised:
+            label.setFrameStyle(QFrame.Panel | QFrame.Raised)
+        label.setLineWidth(2)
+        self.layout_.addWidget(label)

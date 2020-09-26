@@ -2,10 +2,7 @@
 
 """Emulate tags to i3wm. Run as service.
 
-Call in following directions
- i3 <-> logic <-> gui -> Qt
-with no jumps, e.g. logic may call gui,
-but i3 shouldn't call gui directly."""
+"""
 
 import copy
 import i3ipc
@@ -14,36 +11,51 @@ import multipledispatch
 import subprocess
 import threading
 from PySide2.QtCore import QObject, Signal, Slot
-from PySide2.QtWidgets import QLabel, QApplication, QFrame
+from PySide2.QtWidgets import QApplication
 # modules
 from graphical_elements import MainWindow
 import i3ipc_patch
 
 
-class GUI:
-    window = None
+class GUIControl:
+    def __init__(self):
+        self.window = MainWindow()
 
     @Slot()
-    def activate(self, tag_tree):
-        self.window = MainWindow(tag_tree)
-        self._prepare_tags(tag_tree)
-        self.window.move_above_focused_window(tag_tree)
-        self.window.show()
-
-    @Slot()
-    def show_retag_entry(self):
+    def add_retag_entry(self):
         self.window.show_entry(self.process_retag_entry)
 
     @Slot()
     def process_retag_entry(self):
         entry = self.window.entry.text()
-        self.window.destroy()
+        self.window.reset()
         logic.process_retag_entry(entry)
 
     @Slot()
-    def destroy_window(self):
-        self.window.destroy()
+    def reset(self):
+        self.window.reset()
 
+    @Slot()
+    def show_mode(self, binding_event):
+        self.window.clear()
+        self.add_mode(binding_event)
+
+    def add_mode(self, binding_event):
+        behind_mode = binding_event.binding.command.split('mode ', 1)[-1]
+        mode_hints = behind_mode.split(';', 1)[0].split('|')
+        for hint in mode_hints:
+            self.window.add_label(hint)
+
+    @Slot()
+    def show_tags(self, tag_tree):
+        self._prepare_tags(tag_tree)
+        self.prepare_position(tag_tree)
+        self.window.show()
+
+    def prepare_position(self, tag_tree):
+        focused_window = tag_tree.find_focused()
+        self.window.move_(focused_window.rect.x,
+                          focused_window.rect.y + 75)
 
     def _prepare_tags(self, tag_tree):
         for tag in tag_tree.tags():
@@ -53,61 +65,36 @@ class GUI:
             if not windows:
                 try:
                     windows = tag.floating_nodes[0].nodes
-                except IndexError: # no widows at all, label tag name
-                    self.add_label(f'''{tag.name} 
+                except IndexError:  # no widows at all, label tag name
+                    self.window.add_label(f'''{tag.name} 
 ''')
             for window in windows:
                 self.label_i3_window(tag, window)
 
     def label_i3_window(self, tag, window):
-        style = 'raised'
-        if window.focused:
-            style = 'sunken'
-        elif window.urgent:
-            style = None
-        self.add_label(f'''{tag.name}           {window.window_class}
-{window.name}''', style)
-
-    def add_label(self, text, style='sunken'):
-        label = QLabel(text, self.window)
-        if style == 'sunken':
-            label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        elif style == 'raised':
-            label.setFrameStyle(QFrame.Panel | QFrame.Raised)
-        else:
-            pass
-        label.setLineWidth(2)
-        self.window.layout_.addWidget(label)
-
-    @Slot()
-    def _show_mode(self, binding_event):
-        self.window.clear()
-        self.add_mode(binding_event)
-
-    def add_mode(self, binding_event):
-        behind_mode = binding_event.binding.command.split('mode ', 1)[-1]
-        mode_hints = behind_mode.split(';', 1)[0].split('|')
-        for hint in mode_hints:
-            self.add_label(hint)
+        self.window.add_label(f'''{tag.name}           {window.window_class}
+{window.name}''',
+                              window.focused,
+                              not window.urgent)
 
 class Signals(QObject):
-    activate = Signal(object)
-    destroy_window = Signal()
+    show_tags = Signal(object)
+    reset = Signal()
     show_mode = Signal(object)
-    show_retag_entry = Signal()
+    add_retag_entry = Signal()
 
 class Connections:
     def __init__(self):
-        signals.activate.connect(gui.activate)
-        signals.destroy_window.connect(gui.destroy_window)
-        signals.show_mode.connect(gui._show_mode)
-        signals.show_retag_entry.connect(gui.show_retag_entry)
+        signals.show_tags.connect(gui.show_tags)
+        signals.reset.connect(gui.window.reset)
+        signals.show_mode.connect(gui.show_mode)
+        signals.add_retag_entry.connect(gui.add_retag_entry)
 
 
-class BusinessLogic:
+class I3LogicExtension:
     """Central class.
 
-    Don't call tk_root from here, call gui instead."""
+    """
 
     def __init__(self):
         # i3 handles modes properly, including sequences,
@@ -139,20 +126,20 @@ class BusinessLogic:
             self_commands = self.extract_i3tags_commands(i3_command)
             logging.debug(self_commands)
             for c in self_commands:
-                if c == 'reset'   : signals.destroy_window.emit()
+                if c == 'reset'   : signals.reset.emit()
                 # add to your ~/.config/i3/config like this:
                 # bindsym Escape mode default; nop reset
-                elif c == 'new'   : self.activate()
+                elif c == 'tags'  : self.show_tags()
                 elif c == 'mode'  : signals.show_mode.emit(binding_event)
                 elif c == 'switch': self.switch_tag(binding_event)
-                elif c == 'retag' : signals.show_retag_entry.emit()
+                elif c == 'retag' : signals.add_retag_entry.emit()
                 elif c == 'add'   : signals.add_mode.emit(binding_event)
                 elif c == 'branch': self.branch_tag(binding_event)
                 elif c == 'title' : self.show_retitle_entry()
 
-    def activate(self):
+    def show_tags(self):
         self._update_tag_tree()
-        signals.activate.emit(self._tag_tree)
+        signals.show_tags.emit(self._tag_tree)
 
 
     def branch_tag(self, binding_event):
@@ -163,7 +150,7 @@ class BusinessLogic:
         self.tags.append(new_tag)
         i3.command(f'move window to workspace {tag_name}')
 
-    def find_target_name(self, key):
+    def find_target_workspace_name(self, key):
         current_tag_name = self._tag_tree.find_focused().workspace().name
         if current_tag_name == key:
             target = self.previous_tag_name
@@ -178,19 +165,19 @@ class BusinessLogic:
 
     @multipledispatch.dispatch(str)
     def switch_tag(self, symbol):
-        gui.window.destroy()
-        target_name = self.find_target_name(symbol)
+        signals.reset.emit()
+        target_name = self.find_target_workspace_name(symbol)
         target_workspace = self._workspace_tree.find_tag_by_name(target_name)
         target_tag = self._tag_tree.find_tag_by_name(target_name)
         if target_tag:
             for i, window in enumerate(target_tag.nodes):
-               try:
-                   if window.id == target_workspace.nodes[i].id:
-                       pass
-                   else:
-                       self._reload_window_to_workspace(window, target_name)
-               except:
-                   self._reload_window_to_workspace(window, target_name)
+                try:
+                    if window.id == target_workspace.nodes[i].id:
+                        pass
+                    else:
+                        self._reload_window_to_workspace(window, target_name)
+                except:
+                    self._reload_window_to_workspace(window, target_name)
 
         #self.command(f'workspace {target_name}')
         # - blocked by PyCharm if going to empty workspace
@@ -209,7 +196,7 @@ class BusinessLogic:
         self.tags.sort(key=lambda x: x.name)
 
     def process_retag_entry(self, entry):
-        if entry == 'quit':
+        if entry == 'exit':
             app.exit()
             # app.exit is not immediate, we have to stop function too
             return
@@ -288,11 +275,11 @@ class BusinessLogic:
 
 i3 = i3ipc.Connection(auto_reconnect=True)
 i3ipc_patch.apply()
-logic = BusinessLogic()
+logic = I3LogicExtension()
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     app = QApplication()
-    gui = GUI()
+    gui = GUIControl()
     signals = Signals()
     connections = Connections()
     i3_thread = threading.Thread(target=logic.i3_loop)
