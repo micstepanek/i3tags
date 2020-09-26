@@ -175,7 +175,7 @@ class DataStructures:
                         pass
                     else:
                         self._reload_window_to_workspace(window, target_name)
-                except:
+                except IndexError:
                     self._reload_window_to_workspace(window, target_name)
 
         # self.command(f'workspace {target_name}')
