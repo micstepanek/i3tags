@@ -33,6 +33,7 @@ class GUIControl:
     def show_mode(self, binding_event):
         self.window.clear()
         self.add_mode(binding_event)
+        self.window.adjustSize()
 
     def add_mode(self, binding_event):
         behind_mode = binding_event.binding.command.split('mode ', 1)[-1]
@@ -44,6 +45,7 @@ class GUIControl:
     def show_tags(self, tag_tree):
         self._prepare_tags(tag_tree)
         self.prepare_position(tag_tree)
+        self.window.adjustSize()
         self.window.show()
 
     def prepare_position(self, tag_tree):
@@ -121,14 +123,8 @@ class I3Input:
 
 
 class DataStructures:
-    """Central class.
-
-    """
 
     def __init__(self):
-        # i3 handles modes properly, including sequences,
-        # overlapping sequences and multiple keys at once,
-        # as well as japanese keys
         self.tag_tree = i3.get_tree()
         self._workspace_tree = i3.get_tree()
         self.previous_tag_name = self.tag_tree.find_focused().tag().name
