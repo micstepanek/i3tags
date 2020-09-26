@@ -10,10 +10,13 @@ class MainWindow(QDialog):
         self.setWindowTitle(time_)
         self.layout_ = QVBoxLayout()
         self.setLayout(self.layout_)
+        # override Escape key behavior
+        self.reject = self.reset
+        self.entry = None
 
-    # override Escape key behavior
-    def reject(self):
-        self.destroy()
+    def reset(self):
+        self.clear()
+        self.hide()
 
     def clear(self):
         for i in reversed(range(self.layout_.count())):
