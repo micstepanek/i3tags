@@ -3,7 +3,10 @@ Adds keyboard-driven context menu with tagging options
 to your i3. As a side effect it can also replace i3bar.
 Coded with Python3, i3ipc and Qt5.
 
-See this simple short and slow demonstration video on YouTube
+Please see these tiny demonstration videos on YouTube.
+Play the first video 0.5 speed to see what is actually happening.
+
+https://www.youtube.com/watch?v=IL9t-gS0clM
 
 https://www.youtube.com/watch?v=HO1wq3JevYY
 
