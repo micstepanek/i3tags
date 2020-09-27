@@ -1,19 +1,24 @@
 # i3tags
-adds keyboard-driven context menu with tagging options
+Adds keyboard-driven context menu with tagging options
 to your i3. As a side effect it can also replace i3bar.
 Coded with Python3, i3ipc and Qt5.
 
+See this simple short and slow demonstration video on YouTube
+
+https://www.youtube.com/watch?v=HO1wq3JevYY
+
 It is configured by adding keywords to your /i3/config. E.g.
 
-    nop retag 
-
-will show entry to set new tags for focused window.
+    nop tags
+    nop retag
+    nop mode
+    nop switch
 
 Resolvable issues:
 - hard-code
 - documentation
 - long functions
-- back_and_forth must be disabled, i3 tags is doing back and
+- back_and_forth must be disabled, i3tags is doing back and
 forth for tag switching
 
 Coming soon
