@@ -173,11 +173,12 @@ class DataStructures:
             for i, window in enumerate(target_tag.nodes):
                 try:
                     if window.id == target_workspace.nodes[i].id:
-                        pass
-                    else:
-                        self._reload_window_to_workspace(window, target_name)
-                except IndexError:
-                    self._reload_window_to_workspace(window, target_name)
+                        continue
+                except (IndexError, AttributeError):
+                    pass
+                # if anything goes wrong with the window being in
+                # workspace on correct position
+                self._reload_window_to_workspace(window, target_name)
 
         # self.command(f'workspace {target_name}')
         # - blocked by PyCharm if going to empty workspace
