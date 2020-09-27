@@ -201,39 +201,38 @@ class DataStructures:
             app.exit()
             # app.exit is not immediate, we have to stop function too
             return
-        # get variables
-        current_tag = self.tag_tree.find_focused().workspace()
+
         current_window = self.tag_tree.find_focused()
-        # remove current window from tag tree
-        self.tag_tree.remove_node_by_id(current_window.id)
-        #
         if entry == '':
             i3.command(f'[con_id={current_window.id}] kill')
-        else:
-            change_workspace_after_retagging = False
-            for char in entry:
-                if char == '.':
-                    change_workspace_after_retagging = True
-                    break
-                else:
-                    placed = self._add_to_existing_tag(char, current_window)
-                if not placed:
-                    new_tag = copy.copy(current_tag)
-                    new_tag.name = char
-                    new_tag.nodes = [current_window]
-                    self.tags.append(new_tag)
-            if change_workspace_after_retagging is True:
-                self.switch_tag(entry[0])
-            if current_tag.name not in entry:
-                i3.command(
-                    f'[con_id={current_window.id}] move window to workspace {entry[0]}')
+            return
 
-    def _add_to_existing_tag(self, char, current_window):
+        # remove current window from current positions in tag tree
+        self.tag_tree.remove_nodes_by_id(current_window.id)
+
+        for char in entry:
+            if char == '.':
+                continue
+            existing_tag_names = [tag.name for tag in self.tags]
+            if char in existing_tag_names:
+                self.add_to_existing_tag(char)
+            else:
+                new_tag = i3.get_tree().workspaces()[0]
+                new_tag.name = char
+                new_tag.nodes = [i3.get_tree().find_focused()]
+                self.tags.append(new_tag)
+
+        current_tag = self.tag_tree.find_focused().tag()
+        if current_tag.name not in entry:
+            i3.command(
+                f'[con_id={current_window.id}] move window to workspace {entry[0]}')
+        if '.' in entry:
+            self.switch_tag(entry[0])
+
+    def add_to_existing_tag(self, char):
         for tag in self.tags:
             if char == tag.name:
-                tag.nodes.append(current_window)
-                return True
-        return False
+                tag.nodes.append(i3.get_tree().find_focused())
 
     def retitle_focused_window(self, title):
         focused_window = self.tag_tree.find_focused()

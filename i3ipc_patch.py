@@ -14,14 +14,14 @@ def apply():
     i3ipc.Con.tags = i3ipc.Con.workspaces
     i3ipc.Con.remove_focus = remove_focus
     i3ipc.Con.update_tag = update_tag
-    i3ipc.Con.remove_node_by_id = remove_node_by_id
+    i3ipc.Con.remove_nodes_by_id = remove_nodes_by_id
     i3ipc.Con.find_tag_by_name = find_tag_by_name
 
 
-def remove_node_by_id(self, removed_id):
+def remove_nodes_by_id(self, removed_id):
     self.nodes = [node for node in self.nodes if node.id != removed_id]
     for node in self.nodes:
-        node.remove_node_by_id(removed_id)
+        node.remove_nodes_by_id(removed_id)
 
 
 def remove_focus(self):
