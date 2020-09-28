@@ -17,6 +17,8 @@ It is configured by adding keywords to your /i3/config. E.g.
     nop mode
     nop switch
 
+Kill the app by typing 'exit' to retag entry.
+
 Resolvable issues:
 - positions of windows in tagged workspace is unstable
 - hard-code
