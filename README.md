@@ -18,6 +18,7 @@ It is configured by adding keywords to your /i3/config. E.g.
     nop switch
 
 Resolvable issues:
+- positions of windows in tagged workspace is unstable
 - hard-code
 - documentation
 - long functions

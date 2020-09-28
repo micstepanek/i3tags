@@ -186,7 +186,11 @@ class DataStructures:
         subprocess.run(['i3-msg', 'workspace', target_name])
 
     def _reload_window_to_workspace(self, window, target_name):
-        i3.command(f'[con_id={window.id}]move window to workspace tmp')
+        # if you uncomment the next code line you get stable window
+        # positions in
+        # tagged workspaces, but modified layout will be impossible
+        # to keep. i3tags will reset them.
+        # i3.command(f'[con_id={window.id}]move window to workspace tmp')
         i3.command(f'[con_id={window.id}] move window to workspace {target_name}')
 
     def update_tag_tree(self):
