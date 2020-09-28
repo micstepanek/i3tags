@@ -20,7 +20,10 @@ It is configured by adding keywords to your /i3/config. E.g.
 Kill the app by typing 'exit' to retag entry.
 
 Resolvable issues:
-- positions of windows in tagged workspace is unstable
+- only 'nop tags' can show window
+- low consistency ('nop mode' clears window before adding,
+ 'nop tags' not)
+- positions of windows in tagged workspaces are unstable
 - hard-code
 - documentation
 - long functions
