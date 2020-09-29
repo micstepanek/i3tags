@@ -45,8 +45,7 @@ class GUIControl:
     def show_tags(self, tag_tree):
         self._prepare_tags(tag_tree)
         self.prepare_position(tag_tree)
-        self.window.adjustSize()
-        self.window.show()
+        self.window.show_()
 
     def prepare_position(self, tag_tree):
         focused_window = tag_tree.find_focused()

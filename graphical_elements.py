@@ -6,13 +6,16 @@ from PySide2.QtWidgets import QDialog, QVBoxLayout, QLineEdit, QFrame,\
 class MainWindow(QDialog):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
-        time_ = time.asctime(time.localtime())
-        self.setWindowTitle(time_)
         self.layout_ = QVBoxLayout()
         self.setLayout(self.layout_)
         # override Escape key behavior
         self.reject = self.reset
         self.entry = None
+
+    def show_(self):
+        self.update_title()
+        self.adjustSize()
+        self.show()
 
     def reset(self):
         self.clear()
@@ -47,3 +50,7 @@ class MainWindow(QDialog):
             label.setFrameStyle(QFrame.Panel | QFrame.Raised)
         label.setLineWidth(2)
         self.layout_.addWidget(label)
+
+    def update_title(self):
+        time_ = time.asctime(time.localtime())
+        self.setWindowTitle(time_)
