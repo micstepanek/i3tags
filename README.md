@@ -1,6 +1,6 @@
 # i3tags
-Adds keyboard-driven context menu with tagging options
-to your i3. As a side effect it can also replace i3bar.
+i3tags adds keyboard-driven context menu with tagging options
+to i3. As a side effect it can also replace i3bar.
 Coded with Python3, i3ipc and Qt5.
 
 Please see these tiny demonstration videos on YouTube.
@@ -29,8 +29,9 @@ Resolvable issues:
 - back_and_forth must be disabled, i3tags is doing back and
 forth for tag switching
 
-Coming soon
+Thinking about
 - create window if content requested
+- declarative commands
 
 Tough but minor issues:
 - switching between tags that use the same window causes
@@ -42,7 +43,7 @@ visible for a fraction of second.
     
 You may start i3tags anytime while i3 is running by i3tags.sh.
 
-Here are some commands that may be useful for installation(untested):
+Here are some commands that may be useful for installation:
 
     sudo apt install python3.8
     sudo apt install qt5-default
@@ -52,5 +53,7 @@ Here are some commands that may be useful for installation(untested):
     sudo python3.8 -m pip install multipledispatch
     sudo python3.8 -m pip install subprocess
     sudo python3.8 -m pip install threading
+    sudo python3.8 -m pip install time
+    sudo python3.8 -m pip install copy
 
 Kill the app by typing 'exit' to retag entry.
