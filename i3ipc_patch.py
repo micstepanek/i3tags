@@ -1,10 +1,9 @@
-"""Monkey patch, the class used by i3ipc is i3ipc.Con.
+"""
+Monkey patch, the class used by i3ipc is i3ipc.Con
 
-This class
-modifies/extends i3ipc.Con. Don't want to inherit i3ipc.Con and
+Modifies/extends i3ipc.Con. Do not want to inherit i3ipc.Con and
 thus change identity as it is called by multiple i3ipc classes.
-Methods must be assigned to i3ipc.Con
-class, see the end of class."""
+"""
 
 import i3ipc
 
