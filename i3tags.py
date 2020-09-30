@@ -33,7 +33,7 @@ class GUIControl:
     def show_mode(self, binding_event):
         self.window.clear()
         self.add_mode(binding_event)
-        self.window.adjustSize()
+        self.window.show_()
 
     def add_mode(self, binding_event):
         behind_mode = binding_event.binding.command.split('mode ', 1)[-1]

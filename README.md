@@ -19,7 +19,7 @@ It is configured by adding keywords to your /i3/config. E.g.
     nop reset
 
 Resolvable issues:
-- only 'nop tags' can show window
+- only 'nop tags' and 'nop mode' can show window
 - low consistency ('nop mode' clears window before adding,
  'nop tags' not)
 - positions of windows in tagged workspaces are unstable
