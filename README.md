@@ -16,6 +16,7 @@ It is configured by adding keywords to your /i3/config. E.g.
     nop retag
     nop mode
     nop switch
+    nop reset
 
 Resolvable issues:
 - only 'nop tags' can show window
