@@ -26,7 +26,7 @@ class GUIControl:
     def add_retag_entry(self):
         self.window.show_entry(self.preprocess_retag_entry)
 
-    def preprocess_retag_entry(self,entry):
+    def preprocess_retag_entry(self, entry):
         if entry == 'exit':
             app.exit()
         else:
