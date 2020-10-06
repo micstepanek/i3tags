@@ -15,7 +15,7 @@ from PySide2.QtWidgets import QApplication
 # modules
 import graphical_elements
 import i3ipc_patch
-from signals import Signals
+from qt_signals import Signals
 
 
 class GUIControl:
