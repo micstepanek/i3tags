@@ -24,7 +24,13 @@ class GUIControl:
 
     @Slot()
     def add_retag_entry(self):
-        self.window.show_entry(data.process_retag_entry)
+        self.window.show_entry(self.preprocess_retag_entry)
+
+    def preprocess_retag_entry(self,entry):
+        if entry == 'exit':
+            app.exit()
+        else:
+            data.process_retag_entry(entry)
 
     @Slot()
     def reset(self):
@@ -194,11 +200,6 @@ class Data:
         self.tags.sort(key=lambda x: x.name)
 
     def process_retag_entry(self, entry):
-        if entry == 'exit':
-            app.exit()
-            # app.exit is not immediate, we have to stop function too
-            return
-
         current_window = self.tag_tree.find_focused()
         if entry == '':
             i3.command(f'[con_id={current_window.id}] kill')
