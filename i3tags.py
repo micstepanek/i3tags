@@ -126,7 +126,7 @@ class I3Input:
         signals.show_tags.emit(data.tag_tree)
 
 
-class DataStructures:
+class Data:
 
     def __init__(self):
         self.tag_tree = i3.get_tree()
@@ -278,7 +278,7 @@ class DataStructures:
 
 i3 = i3ipc.Connection(auto_reconnect=True)
 i3ipc_patch.apply()
-data = DataStructures()
+data = Data()
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     app = QApplication()
