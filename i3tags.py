@@ -15,7 +15,7 @@ from PySide2.QtWidgets import QApplication
 # modules
 import graphical_elements
 import i3ipc_patch
-from qt_signals import Signals
+import qt_signals
 
 
 class GUIControl:
@@ -278,7 +278,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     app = QApplication()
     gui = GUIControl()
-    signals = Signals()
+    signals = qt_signals.Signals()
     connections = QtConnections()
     i3input = I3Input()
     i3_thread = threading.Thread(target=i3input.i3_loop)
