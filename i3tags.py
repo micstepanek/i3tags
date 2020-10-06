@@ -74,7 +74,7 @@ class GUIControl:
                               not window.urgent)
 
 
-class Connections:
+class QtConnections:
     def __init__(self):
         signals.show_tags.connect(gui.show_tags)
         signals.reset.connect(gui.window.reset)
@@ -278,7 +278,7 @@ if __name__ == "__main__":
     app = QApplication()
     gui = GUIControl()
     signals = Signals()
-    connections = Connections()
+    connections = QtConnections()
     i3input = I3Input()
     i3_thread = threading.Thread(target=i3input.i3_loop)
     i3_thread.start()
