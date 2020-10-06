@@ -10,11 +10,12 @@ import logging
 import multipledispatch
 import subprocess
 import threading
-from PySide2.QtCore import QObject, Signal, Slot
+from PySide2.QtCore import Slot
 from PySide2.QtWidgets import QApplication
 # modules
 import graphical_elements
 import i3ipc_patch
+from signals import Signals
 
 
 class GUIControl:
@@ -71,13 +72,6 @@ class GUIControl:
 {window.name}''',
                               window.focused,
                               not window.urgent)
-
-
-class Signals(QObject):
-    show_tags = Signal(object)
-    reset = Signal()
-    show_mode = Signal(object)
-    add_retag_entry = Signal()
 
 
 class Connections:
@@ -195,7 +189,7 @@ class Data:
     def update_tag_tree(self):
         self._workspace_tree = i3.get_tree()
         self._inspect_tag_tree()
-        self._inspect_workspaces()
+        self._inspecct_workspaces()
         self._inspect_windows()
         self.tags.sort(key=lambda x: x.name)
 
