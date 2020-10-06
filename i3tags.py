@@ -213,10 +213,10 @@ class Data:
         # remove current window from current positions in tag tree
         self.tag_tree.remove_nodes_by_id(current_window.id)
 
+        existing_tag_names = [tag.name for tag in self.tags]
         for char in entry:
             if char == '.':
                 continue
-            existing_tag_names = [tag.name for tag in self.tags]
             if char in existing_tag_names:
                 self.add_to_existing_tag(char)
             else:
