@@ -189,7 +189,7 @@ class Data:
     def update_tag_tree(self):
         self._workspace_tree = i3.get_tree()
         self._inspect_tag_tree()
-        self._inspecct_workspaces()
+        self._inspect_workspaces()
         self._inspect_windows()
         self.tags.sort(key=lambda x: x.name)
 
